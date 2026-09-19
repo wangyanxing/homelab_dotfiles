@@ -10,7 +10,7 @@
     "lazyvim.plugins.extras.lang.markdown",
     "lazyvim.plugins.extras.formatting.prettier"
   ],
-  "install_version": "8",
+  "install_version": 8,
   "news": {},
-  "version": "8"
+  "version": 8
 }
