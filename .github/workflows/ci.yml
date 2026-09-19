@@ -20,8 +20,10 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           # execute-template runs with this runner's OS (linux), so this
           # renders and validates the Linux branch of the install script.
+          # --promptString matches by the PROMPT STRING (2nd arg of
+          # promptStringOnce), not the config key — hence "Git user name".
           chezmoi execute-template --init --no-tty \
-            --promptString name=ci --promptString email=ci@example.com \
+            --promptString "Git user name=ci" --promptString "Git email=ci@example.com" \
             < run_once_before_10-install-packages.sh.tmpl > /tmp/install.sh
           bash -n /tmp/install.sh && echo "install script syntax OK"
 
@@ -47,6 +49,6 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           chezmoi init --source "$PWD" --no-tty \
-            --promptString name=ci --promptString email=ci@example.com
+            --promptString "Git user name=ci" --promptString "Git email=ci@example.com"
           echo "== managed files =="
           chezmoi managed --source "$PWD" | head -60
