@@ -41,7 +41,8 @@ fi
 alias lsg='ll | grep'
 
 # --- cat / find / grep -> modern equivalents (fallback safe) ----------------
-command -v bat >/dev/null 2>&1 && alias cat='bat --paging=never'
+# --style=plain -> syntax highlight only, no line numbers / grid / header
+command -v bat >/dev/null 2>&1 && alias cat='bat --paging=never --style=plain'
 command -v rg  >/dev/null 2>&1 && alias grep='rg'
 
 # --- Alias editing (YADR: ae / ar) ------------------------------------------
