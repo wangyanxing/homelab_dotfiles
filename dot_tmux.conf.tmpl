@@ -23,6 +23,19 @@ bind j select-pane -D
 bind k select-pane -U
 bind l select-pane -R
 
+# --- Pane resize (repeatable: hold prefix, tap H/J/K/L) --------------------
+bind -r H resize-pane -L 5
+bind -r J resize-pane -D 5
+bind -r K resize-pane -U 5
+bind -r L resize-pane -R 5
+
+# --- Zoom / fullscreen a pane (matches zellij Ctrl-b z) --------------------
+bind z resize-pane -Z
+
+# --- Window switching (matches zellij Ctrl-b n/p) --------------------------
+bind -r n next-window
+bind -r p previous-window
+
 # --- Reload config ----------------------------------------------------------
 bind r source-file ~/.tmux.conf \; display "tmux.conf reloaded"
 
@@ -30,10 +43,19 @@ bind r source-file ~/.tmux.conf \; display "tmux.conf reloaded"
 setw -g mode-keys vi
 bind -T copy-mode-vi v send -X begin-selection
 bind -T copy-mode-vi y send -X copy-selection-and-cancel
+{{ if eq .chezmoi.os "darwin" -}}
+bind -T copy-mode-vi y send -X copy-pipe-and-cancel "pbcopy"
+{{ end -}}
 
-# --- Status bar (minimal, matches the dark theme) --------------------------
-set -g status-style "bg=default fg=white"
-set -g status-left "#[fg=green]#S "
-set -g status-right "#[fg=cyan]%Y-%m-%d #[fg=yellow]%H:%M "
-set -g status-justify centre
-setw -g window-status-current-style "fg=magenta bold"
+# --- Status bar (tokyonight — unified with zellij / nvim) ------------------
+# palette: bg #1a1b26  fg #a9b1d6  blue #7aa2f7  green #9ece6a  purple #bb9af7
+set -g status-style "bg=#1a1b26 fg=#a9b1d6"
+set -g status-left "#[fg=#7aa2f7,bold] #S #[default] "
+set -g status-left-length 30
+set -g status-right "#[fg=#bb9af7]%Y-%m-%d #[fg=#7aa2f7]%H:%M "
+set -g status-justify left
+setw -g window-status-format "#[fg=#565f89] #I:#W "
+setw -g window-status-current-format "#[fg=#1a1b26,bg=#7aa2f7,bold] #I:#W #[default]"
+set -g pane-border-style "fg=#3b4261"
+set -g pane-active-border-style "fg=#7aa2f7"
+set -g message-style "bg=#7aa2f7,fg=#1a1b26"

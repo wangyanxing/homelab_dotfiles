@@ -1,5 +1,7 @@
 copy-on-select = clipboard
-theme = Xcode Dark
+# Unified tokyonight palette across ghostty / zellij / nvim / tmux.
+# (built-in theme, sourced from iterm2-color-schemes)
+theme = TokyoNight
 
 font-family = "JetBrainsMono Nerd Font"
 font-size = 12

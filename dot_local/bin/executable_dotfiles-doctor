@@ -73,6 +73,8 @@ check_file "~/.config/zsh/aliases.zsh"
 check_file "~/.config/nvim/init.lua"
 check_file "~/.config/nvim/lazyvim.json"
 check_file "~/.config/zellij/config.kdl"
+check_file "~/.config/mise/config.toml"
+check_file "~/.tmux.conf"
 check_file "~/.zsh_plugins.txt"
 
 section "shell & path"

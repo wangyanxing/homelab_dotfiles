@@ -1,0 +1,23 @@
+# ~/.config/mise/global config — default runtime versions for every machine.
+# mise installs these on demand; `mise install` pulls them all.
+# Add/change tools here, then run `mise install`. Versions are deliberately
+# broad (lts/latest) — pin exact versions per-project via a local .mise.toml.
+#
+# Intentionally NOT shown in the prompt (see starship.toml): keeps it clean.
+
+[tools]
+node = "lts"
+python = "latest"
+
+# Examples — uncomment what you actually use:
+# go = "latest"
+# rust = "latest"
+# "npm:pnpm" = "latest"
+# "npm:typescript" = "latest"
+
+[settings]
+# Don't nag about trusting this file (it's ours, tracked in dotfiles).
+paranoid = false
+# Auto-install missing tool versions when entering a dir with a .mise.toml.
+# Set to true if you want fully hands-off; false avoids surprise downloads.
+not_found_auto_install = false

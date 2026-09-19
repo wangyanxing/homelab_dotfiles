@@ -45,9 +45,11 @@
 | 输入目录名即跳转 | `AUTO_CD` | 不用敲 `cd` |
 | 现代 CLI | eza / bat / fd / ripgrep / delta / fzf / atuin | `ll` `cat` `find` `grep` `git diff` 全面升级 |
 | 现代 CLI（扩展） | lazygit / lazydocker / jq / yq / dust / duf / procs / btop / gh / tldr / glow / httpie | git·docker TUI、JSON/YAML、磁盘/进程监控、GitHub CLI 等 |
-| 编辑器 | **Neovim + LazyVim** | 语言支持：Python/JS/TS/JSON/YAML/C·C++/Docker/Markdown（LSP+格式化）+ 常见配置文件 treesitter |
-| 终端复用 | **zellij**（tmux 风格 Ctrl-b 前缀 + `quad`/`dual` 预设布局）+ tmux 兜底 | 降低从 tmux 迁移的不适应 |
-| 运行时版本管理 | **mise** | 替代 rbenv/nvm，且**不污染 prompt** |
+| 编辑器 | **Neovim + LazyVim** | 语言支持：Python/JS/TS/JSON/YAML/C·C++/Docker/Markdown/TOML（LSP+格式化）+ 常见配置文件 treesitter + 自定义键位 |
+| 终端复用 | **zellij**（tmux 风格 Ctrl-b 前缀 + `quad`/`dual` 预设布局）+ tmux 兜底（键位/配色对齐） | 降低从 tmux 迁移的不适应 |
+| 运行时版本管理 | **mise** | 替代 rbenv/nvm，全局默认版本 + **不污染 prompt** |
+| 统一配色 | **tokyonight** | ghostty / zellij / nvim / tmux 观感一致 |
+| macOS 系统调优 | `macos-defaults`（可选，手动运行） | 键盘重复/Finder/Dock/截图等一键设置 |
 | zsh 插件管理 | **antidote** | 静态编译缓存，启动快 |
 | zsh 插件 | autosuggestions / syntax-highlighting / substring-search / fzf-tab / completions / you-should-use | 补全·高亮·历史·别名提醒 |
 
@@ -246,11 +248,16 @@ homelab_dotfiles/                              # chezmoi source 目录
 │   ├── zellij/                                 # ~/.config/zellij/
 │   │   ├── config.kdl                          #   主配置（tmux 风格前缀）
 │   │   └── layouts/                            #   预设布局：quad（四宫格）/ dual（左右双栏）
-│   └── ghostty/config                          # ~/.config/ghostty/config  终端字体/主题/配色
+│   ├── mise/config.toml                        # ~/.config/mise/  全局运行时版本（node/python）
+│   └── ghostty/config                          # ~/.config/ghostty/config  终端字体/主题（tokyonight）
+│
+├── dot_local/bin/                             # ~/.local/bin/  纳管的可执行脚本
+│   ├── dotfiles-doctor                        #   环境健康自检
+│   └── macos-defaults                         #   macOS 系统调优（可选，手动运行）
 │
 ├── dot_gitconfig.tmpl                         # ~/.gitconfig  git 子命令别名 + delta
 ├── dot_gitignore_global                       # ~/.gitignore_global
-├── dot_tmux.conf                              # ~/.tmux.conf  tmux 兜底配置
+├── dot_tmux.conf.tmpl                         # ~/.tmux.conf  tmux 兜底（键位/配色对齐 zellij）
 │
 ├── dot_zsh.before/                            # ~/.zsh.before/  主配置【之前】加载（本机私有）
 │   └── README.zsh
@@ -456,14 +463,21 @@ zellij attach     # 接回上一个会话（detach 后恢复）
 - **antidote** — zsh 插件管理器。插件清单在 `~/.zsh_plugins.txt`，改动后下次启动自动重编译缓存。
 - **zoxide / fzf / eza / bat / fd / ripgrep / delta / atuin** — 现代 CLI，均在 `tools.zsh` 里做了「存在才启用」的安全初始化，缺任何一个都不会让 shell 报错。
 - **mise** — 运行时（node/python/...）版本管理，`eval "$(mise activate zsh)"`，**刻意不在 prompt 显示版本号**。
+  全局默认版本在 `~/.config/mise/config.toml`（默认 node=lts / python=latest），新机器 `mise install` 一键装齐；
+  项目级用本地 `.mise.toml` 精确锁版本。
 - **LazyVim** — Neovim 发行版；首次打开 `nvim` 会自动安装插件。语言支持通过 `lazyvim.json`
   的 extras 启用：Python / JavaScript·TypeScript / JSON / YAML / C·C++(clangd) / Docker /
-  Markdown（含 LSP、补全、格式化 prettier），配置文件类语言的 treesitter 高亮在
-  `lua/plugins/init.lua`。自定义放 `~/.config/nvim/lua/plugins/`。
+  Markdown / TOML（含 LSP、补全、格式化 prettier），配置文件类语言的 treesitter 高亮在
+  `lua/plugins/init.lua`；自定义键位在 `lua/config/keymaps.lua`，插件放 `~/.config/nvim/lua/plugins/`。
 - **zellij** — 终端复用器，配置里加了 **Ctrl-b 前缀的 tmux 兼容模式**（`Ctrl-b` 后 `%` 竖分屏、
   `"` 横分屏、`c` 新标签、`hjkl` 切换面板）。另带两个预设布局：
   `zq`（四宫格 `zellij --layout quad`）、`zd`（左右双栏 `zellij --layout dual`）。
-- **tmux** — 保留 `~/.tmux.conf` 作为兜底。
+- **tmux** — 保留作为兜底，键位与 zellij 对齐（`Ctrl-b` 前缀，`hjkl` 切面板、`HJKL` 调大小、`z` 全屏、
+  `n`/`p` 切窗口），状态栏与 nvim/zellij/ghostty 统一 tokyonight 配色，macOS 上 `y` 复制走 `pbcopy`。
+- **终端配色** — ghostty / zellij / nvim / tmux 全部统一到 **tokyonight**，观感一致。
+- **macos-defaults** — 可选的 macOS 系统调优脚本（`~/.local/bin/macos-defaults`，**不自动运行**）。
+  新 Mac 手动跑一次：加快键盘重复、Finder 显示隐藏文件/扩展名/路径栏、Dock 自动隐藏、截图存
+  `~/Screenshots`、关智能引号等。全部可逆，非 macOS 会直接退出。
 
 ---
 
