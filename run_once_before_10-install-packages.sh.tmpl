@@ -25,9 +25,25 @@ echo ">>> [dotfiles] bootstrapping packages ..."
 
 {{ if eq .chezmoi.os "darwin" -}}
 # ============================ macOS (Homebrew) ============================
+# Ensure Xcode Command Line Tools are present (git/clang). On a brand-new Mac
+# this may pop a GUI installer dialog you must click through.
+if ! xcode-select -p >/dev/null 2>&1; then
+  echo ">>> triggering Xcode Command Line Tools install (follow the GUI prompt) ..."
+  xcode-select --install || true
+  echo ">>> waiting for Command Line Tools to finish installing ..."
+  until xcode-select -p >/dev/null 2>&1; do sleep 5; done
+fi
+
 if ! command -v brew >/dev/null 2>&1; then
   echo ">>> installing Homebrew ..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+# CRITICAL: put brew on PATH for the rest of THIS script (fresh install case).
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"      # Apple Silicon
+elif [[ -x /usr/local/bin/brew ]]; then
+  eval "$(/usr/local/bin/brew shellenv)"         # Intel
 fi
 
 brew_pkgs=(
@@ -42,6 +58,10 @@ for pkg in "${brew_pkgs[@]}"; do
     brew install "$pkg"
   fi
 done
+
+# Fix Homebrew completion dir perms so zsh's compinit doesn't warn about
+# "insecure directories" on first launch.
+chmod -R go-w "$(brew --prefix)/share/zsh" 2>/dev/null || true
 
 {{ else if eq .chezmoi.os "linux" -}}
 # ============================ Linux ============================
