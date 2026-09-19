@@ -56,16 +56,39 @@
 只需机器上有 `git` 和 `curl`：
 
 ```sh
-# 1. 安装 chezmoi 并从你的 GitHub 仓库初始化 + 应用
+# 安装 chezmoi 并从你的 GitHub 仓库初始化 + 应用
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply <你的GitHub用户名>/homelab_dotfiles
 ```
 
 `chezmoi init --apply` 会自动：
 1. 拉取本仓库到 `~/.local/share/chezmoi`
-2. 运行 `run_once_before_10-install-packages.sh`（自动装 starship/zoxide/eza/... 全套工具）
-3. 把所有配置软链/写入到 `$HOME`
+2. 运行 `run_once_before_10-install-packages.sh`（自动装 Homebrew + starship/zoxide/eza/...
+   全套工具 + JetBrainsMono Nerd Font）
+3. 把所有配置写入 `$HOME`
 
 首次启动 zsh 时，antidote 会自动 clone 并编译 zsh 插件（约十几秒，仅一次）。
+
+#### ⚠️ 全新 macOS 上并非「零干预」，有几步需要你手动配合
+
+| 环节 | 你要做什么 | 说明 |
+|---|---|---|
+| Xcode 命令行工具 | 弹框点「安装」，等几分钟 | 全新 Mac 没有 git，系统级 GUI 弹框，脚本无法替你点。脚本会自动触发并等待其完成 |
+| Homebrew 密码 | 输一次 sudo 密码 | brew 首次要创建 `/opt/homebrew` |
+| 重开终端 | 装完后 `exec zsh` 或新开窗口 | prompt / 插件需新 shell 加载 |
+| 首次启动 | 新 shell 第一次卡十几秒 | antidote 在 clone 5 个 zsh 插件 |
+| Neovim 首次打开 | 第一次 `nvim` 自动装插件 | LazyVim 拉插件 |
+| Ghostty 字体 | 通常无需操作 | 字体已随本仓库自动安装，Ghostty 配置也已纳入管理并指向该字体 |
+
+> 这些手动步骤（尤其 CLT 弹框和 sudo 密码）是 macOS 的安全机制，**任何 dotfiles 方案都绕不开**。
+> 除此之外全程自动。
+
+#### 与「样子一致」相关的说明
+
+- **字体**：安装脚本会自动装 `JetBrainsMono Nerd Font`，Ghostty 配置（`~/.config/ghostty/config`）
+  也已纳入管理并引用它，starship 的分支符号 / 状态圆点即可正常显示。
+- **`z` 记忆为空**：zoxide 数据库不跨机器同步，新机上 `z down` 一开始跳不动，正常 `cd` 几次喂给它即可。
+- **主机名**：prompt 里 `@host` 会显示新机的主机名，属预期。
+
 
 ### 在已有机器上应用
 
@@ -121,7 +144,8 @@ homelab_dotfiles/                              # chezmoi source 目录
 │   │   ├── init.lua
 │   │   └── lua/config/lazy.lua                 #   lazy.nvim 引导（禁用冗余内置插件）
 │   │   └── lua/plugins/init.lua                #   你的自定义插件 / 覆盖
-│   └── zellij/config.kdl                       # ~/.config/zellij/config.kdl（tmux 风格前缀）
+│   ├── zellij/config.kdl                       # ~/.config/zellij/config.kdl（tmux 风格前缀）
+│   └── ghostty/config                          # ~/.config/ghostty/config  终端字体/主题/配色
 │
 ├── dot_gitconfig.tmpl                         # ~/.gitconfig  git 子命令别名 + delta
 ├── dot_gitignore_global                       # ~/.gitignore_global
