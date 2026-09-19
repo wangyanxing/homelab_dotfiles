@@ -34,9 +34,11 @@ if ! xcode-select -p >/dev/null 2>&1; then
   until xcode-select -p >/dev/null 2>&1; do sleep 5; done
 fi
 
-if ! command -v brew >/dev/null 2>&1; then
-  echo ">>> installing Homebrew ..."
-  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+if ! command -v brew >/dev/null 2>&1 && [[ ! -x /opt/homebrew/bin/brew && ! -x /usr/local/bin/brew ]]; then
+  echo ">>> Homebrew not found; installing (it will ask for your admin password) ..."
+  # NOTE: no NONINTERACTIVE here on purpose — the installer needs a TTY to
+  # prompt for your sudo password. `|| true` so a failure doesn't abort apply.
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
 fi
 
 # CRITICAL: put brew on PATH for the rest of THIS script (fresh install case).
@@ -44,6 +46,20 @@ if [[ -x /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"      # Apple Silicon
 elif [[ -x /usr/local/bin/brew ]]; then
   eval "$(/usr/local/bin/brew shellenv)"         # Intel
+fi
+
+# If brew still isn't available (no admin rights, install cancelled, or no TTY),
+# don't hard-fail: print manual steps and let chezmoi apply the config anyway.
+if ! command -v brew >/dev/null 2>&1; then
+  cat <<'EOF'
+    !! Homebrew is still not available.
+       Your dotfiles/config were still applied — only the CLI tools are pending.
+       Finish setup manually (you must be an Administrator):
+         1) /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+         2) eval "$(/opt/homebrew/bin/brew shellenv)"
+         3) brew bundle --file ~/.config/homebrew/Brewfile
+EOF
+  exit 0
 fi
 
 # Install everything from the Brewfile (single source of truth).
