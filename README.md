@@ -24,6 +24,7 @@
   - [历史命令搜索](#历史命令搜索)
   - [本地个性化：.zsh.before / .zsh.after](#本地个性化zshbefore--zshafter)
   - [快速改 alias：ar / ae](#快速改-aliasar--ae)
+- [zellij 终端复用](#zellij-终端复用)
 - [各组件说明](#各组件说明)
 - [常见操作速查](#常见操作速查)
 - [自定义与扩展](#自定义与扩展)
@@ -370,6 +371,62 @@ ae   # 用编辑器打开 aliases.zsh
 ar   # 重新加载 aliases.zsh（当前 shell 立即生效）
 gar  # 让所有已打开的 zsh 会话都重新加载 alias
 ```
+
+---
+
+## zellij 终端复用
+
+终端复用器（多面板 / 多标签 / 会话保留）。配置里加了 **`Ctrl-b` 前缀的 tmux 兼容模式**，
+tmux 的肌肉记忆基本能直接沿用：先按 `Ctrl-b`，松开，再按下一个命令键。
+
+### 启动 / 会话
+
+```sh
+zellij            # 普通启动
+zq                # 四宫格布局（alias = zellij --layout quad）
+zd                # 左右双栏布局（alias = zellij --layout dual）
+
+zellij ls         # 列出会话
+zellij attach     # 接回上一个会话（detach 后恢复）
+```
+
+### 快捷键（都是先按 `Ctrl-b`，再按后一个键）
+
+**面板 pane**
+
+| 按键 | 作用 |
+|---|---|
+| `Ctrl-b` `%` | 竖分屏（左右） |
+| `Ctrl-b` `"` | 横分屏（上下） |
+| `Ctrl-b` `h/j/k/l` | 面板间移动焦点（也可用方向键） |
+| `Ctrl-b` `o` | 切到下一个面板 |
+| `Ctrl-b` `z` | 当前面板全屏切换 |
+| `Ctrl-b` `x` | 关闭当前面板 |
+
+**标签 tab（相当于 tmux 的 window）**
+
+| 按键 | 作用 |
+|---|---|
+| `Ctrl-b` `c` | 新建 tab |
+| `Ctrl-b` `n` / `p` | 下一个 / 上一个 tab |
+| `Ctrl-b` `1`..`5` | 跳到第 N 个 tab |
+| `Ctrl-b` `,` | 重命名当前 tab |
+
+**会话 / 其他**
+
+| 按键 | 作用 |
+|---|---|
+| `Ctrl-b` `d` | detach（脱离，会话在后台保留） |
+| `Ctrl-b` `[` | 进入滚动模式（翻历史，`q`/`Esc` 退出） |
+| `Ctrl-b` `s` | 打开会话管理器 |
+| `Ctrl-b` `Ctrl-b` | 把 `Ctrl-b` 透传给内部程序 |
+
+### 小提示
+
+- 开了 `copy_on_select` + `mouse_mode`：鼠标选中文本即自动复制。
+- 底部状态栏会实时显示当前模式和可用快捷键，忘了就看它。
+- 改了 `~/.config/zellij/` 配置后需 `chezmoi apply` 再重启 zellij 生效。
+- 预设布局文件在 `~/.config/zellij/layouts/`（`quad.kdl` / `dual.kdl`），可自行增删。
 
 ---
 
