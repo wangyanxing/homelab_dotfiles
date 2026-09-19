@@ -1,0 +1,21 @@
+copy-on-select = clipboard
+theme = Xcode Dark
+
+font-family = "JetBrainsMono Nerd Font"
+font-size = 12
+font-thicken = true
+
+window-padding-x = 2
+window-padding-y = 2
+macos-titlebar-style = tabs
+
+scrollback-limit = 10000000
+confirm-close-surface = false
+
+term = xterm-256color
+
+
+# 强制让 Option + 左箭头 发送标准向左跳词码 (Esc + b)
+keybind = alt+left=text:\x1bb
+# 强制让 Option + 右箭头 发送标准向右跳词码 (Esc + f)
+keybind = alt+right=text:\x1bf

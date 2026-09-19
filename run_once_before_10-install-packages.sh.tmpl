@@ -63,6 +63,15 @@ done
 # "insecure directories" on first launch.
 chmod -R go-w "$(brew --prefix)/share/zsh" 2>/dev/null || true
 
+# Nerd Font (JetBrainsMono) so starship's git symbols / status dots render.
+# Matches the font referenced in ~/.config/ghostty/config.
+if brew list --cask font-jetbrains-mono-nerd-font >/dev/null 2>&1; then
+  echo "    ok   font-jetbrains-mono-nerd-font"
+else
+  echo "    install font-jetbrains-mono-nerd-font"
+  brew install --cask font-jetbrains-mono-nerd-font
+fi
+
 {{ else if eq .chezmoi.os "linux" -}}
 # ============================ Linux ============================
 # Prefer Homebrew on Linux too (gives us the same modern versions everywhere).
