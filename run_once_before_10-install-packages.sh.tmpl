@@ -49,6 +49,8 @@ fi
 brew_pkgs=(
   starship zoxide fzf eza bat fd ripgrep git-delta atuin
   zellij neovim mise antidote tmux
+  # modern extras
+  lazygit jq yq dust duf procs btop gh tealdeer lazydocker glow httpie
 )
 for pkg in "${brew_pkgs[@]}"; do
   if brew list --formula "$pkg" >/dev/null 2>&1; then
@@ -87,7 +89,8 @@ if command -v apt-get >/dev/null 2>&1; then
   sudo apt-get update -y
   sudo apt-get install -y \
     zsh git curl wget file unzip tar build-essential \
-    fzf bat fd-find ripgrep tmux
+    fzf bat fd-find ripgrep tmux \
+    jq btop httpie
   # Debian/Ubuntu ship batcat/fdfind; symlink to conventional names.
   command -v batcat >/dev/null 2>&1 && ln -sf "$(command -v batcat)" "$HOME/.local/bin/bat"
   command -v fdfind >/dev/null 2>&1 && ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
@@ -123,6 +126,33 @@ gh_install eza      eza-community/eza  "${arch}-unknown-linux-gnu.tar.gz"
 gh_install delta    dandavison/delta   "${arch}-unknown-linux-gnu.tar.gz"
 gh_install zellij   zellij-org/zellij  "${arch}-unknown-linux-musl.tar.gz"
 gh_install atuin    atuinsh/atuin      "${arch}-unknown-linux-gnu.tar.gz"
+
+# modern extras (tarball-based, single binary inside)
+gh_install lazygit    jesseduffield/lazygit    "Linux_${arch/x86_64/x86_64}.tar.gz"
+gh_install lazydocker jesseduffield/lazydocker "Linux_${arch/x86_64/x86_64}.tar.gz"
+gh_install dust       bootandy/dust            "${arch}-unknown-linux-gnu.tar.gz"
+gh_install duf        muesli/duf               "linux_${arch/x86_64/amd64}.tar.gz"
+gh_install procs      dalance/procs            "${arch}-linux.zip"
+gh_install glow       charmbracelet/glow       "Linux_${arch/x86_64/x86_64}.tar.gz"
+
+# yq (single raw binary asset, not a tarball)
+if ! command -v yq >/dev/null 2>&1; then
+  echo "    install yq"
+  yq_arch="${arch/x86_64/amd64}"; yq_arch="${yq_arch/aarch64/arm64}"
+  curl -fsSL "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${yq_arch}" \
+    -o "$HOME/.local/bin/yq" && chmod +x "$HOME/.local/bin/yq"
+fi
+
+# gh (GitHub CLI); binary lives in bin/ inside the tarball -> handled by find
+gh_install gh cli/cli "linux_${arch/x86_64/amd64}.tar.gz"
+
+# tealdeer -> provides the `tldr` command (raw binary asset)
+if ! command -v tldr >/dev/null 2>&1; then
+  echo "    install tldr (tealdeer)"
+  tldr_arch="${arch/x86_64/x86_64}"; tldr_arch="${tldr_arch/aarch64/aarch64}"
+  curl -fsSL "https://github.com/tealdeer-rs/tealdeer/releases/latest/download/tealdeer-linux-${tldr_arch}-musl" \
+    -o "$HOME/.local/bin/tldr" && chmod +x "$HOME/.local/bin/tldr"
+fi
 
 # --- mise (official installer -> ~/.local/bin) ------------------------------
 if ! command -v mise >/dev/null 2>&1; then

@@ -14,5 +14,8 @@ zsh-users/zsh-history-substring-search
 # extra completion definitions
 zsh-users/zsh-completions
 
+# remind me to use an alias when I type the full command
+MichaelAquilina/zsh-you-should-use
+
 # syntax highlighting on the command line (must be loaded near-last)
 zsh-users/zsh-syntax-highlighting

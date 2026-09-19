@@ -43,10 +43,12 @@
 | 模糊补全 / 纠错 | zsh 原生 + fzf-tab | 打错目录名 Tab 自动纠正 |
 | 输入目录名即跳转 | `AUTO_CD` | 不用敲 `cd` |
 | 现代 CLI | eza / bat / fd / ripgrep / delta / fzf / atuin | `ll` `cat` `find` `grep` `git diff` 全面升级 |
+| 现代 CLI（扩展） | lazygit / lazydocker / jq / yq / dust / duf / procs / btop / gh / tldr / glow / httpie | git·docker TUI、JSON/YAML、磁盘/进程监控、GitHub CLI 等 |
 | 编辑器 | **Neovim + LazyVim** | 轻量起步，禁用冗余内置插件 |
 | 终端复用 | **zellij**（含 tmux 风格 Ctrl-b 前缀）+ tmux 兜底 | 降低从 tmux 迁移的不适应 |
 | 运行时版本管理 | **mise** | 替代 rbenv/nvm，且**不污染 prompt** |
 | zsh 插件管理 | **antidote** | 静态编译缓存，启动快 |
+| zsh 插件 | autosuggestions / syntax-highlighting / substring-search / fzf-tab / completions / you-should-use | 补全·高亮·历史·别名提醒 |
 
 ---
 
@@ -307,6 +309,16 @@ gd        # git diff
 ll        # eza -alh --git（彩色、带 git 状态）
 psg <x>   # ps aux | grep x
 lt        # eza --tree（目录树）
+
+# 现代扩展工具（装了才生效）
+lg        # lazygit（git TUI）
+lzd       # lazydocker（docker TUI）
+du        # dust（磁盘占用树）
+df        # duf（磁盘概览）
+psx       # procs（现代 ps；psg 仍保留）
+top       # btop（系统监控）
+# 直接命令：jq / yq（JSON·YAML）、gh（GitHub CLI）、tldr（命令示例）、
+#           glow file.md（渲染 Markdown）、http（HTTPie 调 API）
 
 # 全局 alias（管道简写）
 ls foo G bar   # = ls foo | grep bar

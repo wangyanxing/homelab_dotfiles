@@ -52,6 +52,14 @@ if command -v nvim >/dev/null 2>&1; then
   alias vi='nvim'
 fi
 
+# --- modern extras (each guarded; falls back gracefully if not installed) ---
+command -v dust    >/dev/null 2>&1 && alias du='dust'          # disk usage tree
+command -v duf     >/dev/null 2>&1 && alias df='duf'           # disk free, pretty
+command -v procs   >/dev/null 2>&1 && alias psx='procs'        # modern ps (keeps psg intact)
+command -v btop    >/dev/null 2>&1 && alias top='btop'
+command -v lazygit >/dev/null 2>&1 && alias lg='lazygit'
+command -v lazydocker >/dev/null 2>&1 && alias lzd='lazydocker'
+
 # --- Alias editing (YADR: ae / ar) ------------------------------------------
 # ae = alias edit, ar = alias reload. See functions.zsh for the reload trap.
 alias ae="\${EDITOR:-nvim} ${XDG_CONFIG_HOME:-$HOME/.config}/zsh/aliases.zsh"
