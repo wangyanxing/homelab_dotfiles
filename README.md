@@ -461,6 +461,26 @@ mv ~/.vimrc ~/.vim ~/.vimrc.before ~/.vimrc.after ~/dotfiles-backup/ 2>/dev/null
 ```
 本配置的 `vim`/`vi` 已别名到 `nvim`（LazyVim），清掉 YADR 软链后重开终端即正常。
 
+### 往安装脚本加了新工具，但已装过的机器不自动装
+
+`run_once_before_*` 脚本**每台机器只跑一次**（chezmoi 记住了它的哈希）。
+之后你在脚本里新增了工具，已经跑过的机器不会自动重装。三种办法：
+
+```sh
+# 办法 A（推荐）：清掉脚本执行记录，让它下次 apply 时重跑
+chezmoi state delete-bucket --bucket=scriptState
+chezmoi apply
+
+# 办法 B：手动把新工具装上（macOS 例）
+brew install lazygit jq yq dust duf procs btop gh tealdeer lazydocker glow httpie
+
+# 办法 C（Ubuntu 手动）：直接从各项目 GitHub release 下二进制到 ~/.local/bin
+#   （或按办法 A 让脚本重跑，Linux 分支会自动拉取）
+```
+
+> 因为脚本对每个包都有 `command -v` / `brew list` 判断，重跑是**幂等**的——
+> 已装的跳过，只补新的，安全。
+
 ---
 
 ## 卸载 / 回滚
