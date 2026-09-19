@@ -307,7 +307,7 @@ gd        # git diff
 
 # 系统
 ll        # eza -alh --git（彩色、带 git 状态）
-psg <x>   # ps aux | grep x
+psg <x>   # procs（进程搜索，如 psg nginx；未装 procs 则回退 ps aux | grep）
 lt        # eza --tree（目录树）
 
 # 现代扩展工具（装了才生效）
@@ -315,7 +315,6 @@ lg        # lazygit（git TUI）
 lzd       # lazydocker（docker TUI）
 du        # dust（磁盘占用树）
 df        # duf（磁盘概览）
-psx       # procs（现代 ps；psg 仍保留）
 top       # btop（系统监控）
 # 直接命令：jq / yq（JSON·YAML）、gh（GitHub CLI）、tldr（命令示例）、
 #           glow file.md（渲染 Markdown）、http（HTTPie 调 API）

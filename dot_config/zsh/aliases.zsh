@@ -12,7 +12,13 @@ esac
 
 # --- ps ---------------------------------------------------------------------
 alias psa="ps aux"
-alias psg="ps aux | grep "     # YADR muscle memory
+# psg: search processes. Uses procs (colored, keeps header, highlights match:
+# `psg nginx`) when available; falls back to classic `ps aux | grep`.
+if command -v procs >/dev/null 2>&1; then
+  alias psg='procs'          # YADR muscle memory, now powered by procs
+else
+  alias psg="ps aux | grep " # YADR muscle memory
+fi
 
 # --- Moving around ----------------------------------------------------------
 alias cdb='cd -'
@@ -55,7 +61,6 @@ fi
 # --- modern extras (each guarded; falls back gracefully if not installed) ---
 command -v dust    >/dev/null 2>&1 && alias du='dust'          # disk usage tree
 command -v duf     >/dev/null 2>&1 && alias df='duf'           # disk free, pretty
-command -v procs   >/dev/null 2>&1 && alias psx='procs'        # modern ps (keeps psg intact)
 command -v btop    >/dev/null 2>&1 && alias top='btop'
 command -v lazygit >/dev/null 2>&1 && alias lg='lazygit'
 command -v lazydocker >/dev/null 2>&1 && alias lzd='lazydocker'
