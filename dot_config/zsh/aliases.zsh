@@ -45,6 +45,13 @@ alias lsg='ll | grep'
 command -v bat >/dev/null 2>&1 && alias cat='bat --paging=never --style=plain'
 command -v rg  >/dev/null 2>&1 && alias grep='rg'
 
+# --- editor: point vim -> nvim (LazyVim) when nvim is available -------------
+# Keeps `vim` muscle memory while actually launching Neovim/LazyVim.
+if command -v nvim >/dev/null 2>&1; then
+  alias vim='nvim'
+  alias vi='nvim'
+fi
+
 # --- Alias editing (YADR: ae / ar) ------------------------------------------
 # ae = alias edit, ar = alias reload. See functions.zsh for the reload trap.
 alias ae="\${EDITOR:-nvim} ${XDG_CONFIG_HOME:-$HOME/.config}/zsh/aliases.zsh"
