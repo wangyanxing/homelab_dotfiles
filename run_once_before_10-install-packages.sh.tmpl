@@ -97,43 +97,52 @@ if command -v apt-get >/dev/null 2>&1; then
 fi
 
 # --- helper: install a single-binary tool from a GitHub release tarball -----
+# From here on, individual tool failures must NOT abort the whole bootstrap.
+set +e
 # usage: gh_install <bin_name> <owner/repo> <asset_grep_pattern>
+# Robust: a failure here never aborts the whole bootstrap (errexit disabled
+# locally, network/limit errors tolerated).
 gh_install() {
   local bin="$1" repo="$2" pattern="$3"
-  if command -v "$bin" >/dev/null 2>&1; then echo "    ok   $bin"; return; fi
+  if command -v "$bin" >/dev/null 2>&1; then echo "    ok   $bin"; return 0; fi
   echo "    install $bin (github: $repo)"
-  local url
-  url=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" \
-        | grep -oE '"browser_download_url": *"[^"]+"' \
-        | cut -d'"' -f4 | grep -E "$pattern" | head -1)
-  if [[ -z "$url" ]]; then echo "    !! no matching asset for $bin ($pattern)"; return; fi
-  local tmp; tmp="$(mktemp -d)"
-  curl -fsSL "$url" -o "$tmp/dl"
-  case "$url" in
-    *.tar.gz|*.tgz) tar -xzf "$tmp/dl" -C "$tmp" ;;
-    *.zip)          unzip -q "$tmp/dl" -d "$tmp" ;;
-    *)              cp "$tmp/dl" "$tmp/$bin"; chmod +x "$tmp/$bin" ;;
-  esac
-  local found; found="$(find "$tmp" -type f -name "$bin" | head -1)"
-  if [[ -n "$found" ]]; then install -m755 "$found" "$HOME/.local/bin/$bin"; fi
-  rm -rf "$tmp"
+  ( set +e
+    url=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null \
+          | grep -oE '"browser_download_url": *"[^"]+"' \
+          | cut -d'"' -f4 \
+          | grep -Ev 'sha256|\.sig|\.sbom|server|musleabi' \
+          | grep -E "$pattern" | head -1)
+    if [[ -z "$url" ]]; then echo "    !! no asset for $bin ($pattern), skip"; exit 0; fi
+    tmp="$(mktemp -d)"
+    if ! curl -fsSL "$url" -o "$tmp/dl"; then echo "    !! download failed for $bin, skip"; rm -rf "$tmp"; exit 0; fi
+    case "$url" in
+      *.tar.gz|*.tgz) tar -xzf "$tmp/dl" -C "$tmp" 2>/dev/null ;;
+      *.zip)          unzip -q "$tmp/dl" -d "$tmp" 2>/dev/null ;;
+      *)              cp "$tmp/dl" "$tmp/$bin"; chmod +x "$tmp/$bin" ;;
+    esac
+    found="$(find "$tmp" -type f -name "$bin" | head -1)"
+    if [[ -n "$found" ]]; then install -m755 "$found" "$HOME/.local/bin/$bin" && echo "    done $bin"; else echo "    !! binary '$bin' not found in asset, skip"; fi
+    rm -rf "$tmp"
+  )
+  return 0
 }
 
 # --- modern CLI tools (static binaries) -------------------------------------
-gh_install starship starship/starship "${arch}-unknown-linux-gnu.tar.gz"
-gh_install zoxide   ajeetdsouza/zoxide "${arch}-unknown-linux-musl.tar.gz"
-gh_install eza      eza-community/eza  "${arch}-unknown-linux-gnu.tar.gz"
-gh_install delta    dandavison/delta   "${arch}-unknown-linux-gnu.tar.gz"
-gh_install zellij   zellij-org/zellij  "${arch}-unknown-linux-musl.tar.gz"
-gh_install atuin    atuinsh/atuin      "${arch}-unknown-linux-gnu.tar.gz"
+gh_install starship starship/starship "${arch}-unknown-linux-gnu.tar.gz$"
+gh_install zoxide   ajeetdsouza/zoxide "${arch}-unknown-linux-musl.tar.gz$"
+gh_install eza      eza-community/eza  "${arch}-unknown-linux-gnu.tar.gz$"
+gh_install delta    dandavison/delta   "${arch}-unknown-linux-gnu.tar.gz$"
+gh_install zellij   zellij-org/zellij  "${arch}-unknown-linux-musl.tar.gz$"
+gh_install atuin    atuinsh/atuin      "atuin-${arch}-unknown-linux-gnu.tar.gz$"
 
-# modern extras (tarball-based, single binary inside)
-gh_install lazygit    jesseduffield/lazygit    "Linux_${arch/x86_64/x86_64}.tar.gz"
-gh_install lazydocker jesseduffield/lazydocker "Linux_${arch/x86_64/x86_64}.tar.gz"
-gh_install dust       bootandy/dust            "${arch}-unknown-linux-gnu.tar.gz"
-gh_install duf        muesli/duf               "linux_${arch/x86_64/amd64}.tar.gz"
-gh_install procs      dalance/procs            "${arch}-linux.zip"
-gh_install glow       charmbracelet/glow       "Linux_${arch/x86_64/x86_64}.tar.gz"
+# modern extras. lazygit/lazydocker use lowercase 'linux_<arch>' (x86_64/arm64).
+lg_arch="${arch/aarch64/arm64}"
+gh_install lazygit    jesseduffield/lazygit    "linux_${lg_arch}.tar.gz$"
+gh_install lazydocker jesseduffield/lazydocker "Linux_${lg_arch}.tar.gz$"
+gh_install dust       bootandy/dust            "dust-.*${arch}-unknown-linux-gnu.tar.gz$"
+gh_install duf        muesli/duf               "linux_${arch}.tar.gz$"
+gh_install procs      dalance/procs            "${arch}-linux.zip$"
+gh_install glow       charmbracelet/glow       "Linux_${arch}.tar.gz$"
 
 # yq (single raw binary asset, not a tarball)
 if ! command -v yq >/dev/null 2>&1; then
