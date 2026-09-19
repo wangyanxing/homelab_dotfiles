@@ -1,0 +1,18 @@
+# zsh plugins, loaded by antidote (see ~/.config/zsh/plugins.zsh).
+# One plugin per line. Comments with '#' are ignored.
+
+# fish-like grey inline autosuggestions from history
+zsh-users/zsh-autosuggestions
+
+# fuzzy tab completion menu (files/dirs/etc.) powered by fzf
+Aloxaf/fzf-tab
+
+# type a substring + press Up -> search matching history  (YADR must-have)
+# e.g. type "cu" + Up -> finds your last `curl http://192.168.0.27:8098`
+zsh-users/zsh-history-substring-search
+
+# extra completion definitions
+zsh-users/zsh-completions
+
+# syntax highlighting on the command line (must be loaded near-last)
+zsh-users/zsh-syntax-highlighting

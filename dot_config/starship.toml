@@ -1,0 +1,61 @@
+# ============================================================================
+#  starship.toml - replicates the old YADR "skwp" prompt (see your screenshot)
+#
+#  Layout:   user@host  ~/full/path (branch<status-dots>)$
+#            └lime┘ └orange┘ └turquoise┘  └white┘└colored●┘
+#
+#  Status dots (matches skwp):
+#     ● added/staged = lime | modified = hotpink | untracked = purple | deleted = orange
+#
+#  Single line, no Ruby version on the right anymore.
+# ============================================================================
+
+add_newline = false
+
+format = "$username$hostname$directory$git_branch$git_status$character"
+
+# --- username : limegreen (256-color 118) -----------------------------------
+[username]
+show_always = true
+format = "[$user]($style)"
+style_user = "bold 118"
+style_root = "bold 161"
+
+# --- @host : orange (166) ---------------------------------------------------
+[hostname]
+ssh_only = false
+format = "[@$hostname]($style) "
+style = "bold 166"
+
+# --- path : turquoise (81), full path like zsh %~ ---------------------------
+[directory]
+format = "[$path]($style) "
+style = "bold 81"
+truncation_length = 0        # show the full path (no truncation)
+truncate_to_repo = false     # don't collapse to repo root
+home_symbol = "~"
+
+# --- git branch : opens the paren, white branch name ------------------------
+[git_branch]
+symbol = ""
+format = '[\(]($style)[$branch]($style)'
+style = "bold white"
+
+# --- git status : colored dots, then close the paren ------------------------
+[git_status]
+format = '$conflicted$stashed$deleted$renamed$modified$staged$untracked$ahead_behind[\)](bold white)'
+conflicted = "[✕](bold 161)"
+stashed    = "[✭](bold 81)"
+deleted    = "[●](166)"     # orange
+modified   = "[●](161)"     # hotpink
+staged     = "[●](118)"     # lime
+untracked  = "[●](135)"     # purple  (the dot you see in the screenshot)
+ahead      = "[⇡${count}](bold 81)"
+behind     = "[⇣${count}](bold 166)"
+diverged   = "[⇕](bold 161)"
+
+# --- the "$" prompt char ----------------------------------------------------
+[character]
+success_symbol = "[\\$](bold white) "
+error_symbol   = "[\\$](bold 161) "
+vimcmd_symbol  = "[<](bold 118) "

@@ -1,0 +1,7 @@
+# chezmoi machine-local state (never commit)
+.chezmoi.toml
+.chezmoistate.boltdb
+
+# editor / OS noise
+.DS_Store
+*.swp

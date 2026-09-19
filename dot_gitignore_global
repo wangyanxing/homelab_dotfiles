@@ -1,0 +1,13 @@
+# Global gitignore
+.DS_Store
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+node_modules/
+__pycache__/
+*.pyc
+.env
+.env.local
+.direnv/

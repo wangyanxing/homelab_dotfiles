@@ -1,0 +1,117 @@
+# ~/.gitconfig  (managed by chezmoi)
+# Git subcommand aliases here back the shell aliases in ~/.config/zsh/git.zsh
+# (gl -> git l, gcm -> git commit -m, gco -> git checkout, gnb -> git nb ...).
+
+[user]
+{{ if (env "GIT_AUTHOR_NAME") -}}
+    name = {{ env "GIT_AUTHOR_NAME" | quote }}
+{{ else -}}
+    # set via ~/.gitconfig.user (not committed) or edit here
+{{ end -}}
+
+[include]
+    # machine-local / private identity & overrides (never committed)
+    path = ~/.gitconfig.user
+
+[core]
+    autocrlf = false
+    editor = {{ .editor }}
+    excludesfile = ~/.gitignore_global
+    pager = delta
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true
+    line-numbers = true
+    side-by-side = false
+
+[color]
+    ui = true
+[color "branch"]
+    current = yellow reverse
+    local = yellow
+    remote = green
+[color "diff"]
+    meta = yellow bold
+    frag = magenta bold
+    old = red
+    new = green
+
+[alias]
+    # add
+    a = add
+    chunkyadd = add --patch
+    contributors = shortlog --summary --numbered --email
+
+    # branch
+    b = branch -v
+    recent-branches = !git for-each-ref --count=15 --sort=-committerdate refs/heads/ --format='%(refname:short)'
+
+    # commit
+    c = commit -m
+    ca = commit -am
+    ci = commit
+    amend = commit --amend
+
+    # checkout / new branch
+    co = checkout
+    nb = checkout -b
+
+    # cherry-pick
+    cp = cherry-pick -x
+
+    # diff
+    d = diff
+    dc = diff --cached
+    last = diff HEAD^
+
+    # log (pretty graph) -- backs gl / glg / glog
+    l = log --graph --date=short --pretty=format:'%C(yellow)%h%Creset %C(green)%d%Creset %s %C(blue)[%an]%Creset %C(magenta)%cr%Creset'
+    changes = log --pretty=format:"%h %cr %cn %Cgreen%s%Creset" --name-status
+    short = log --pretty=format:"%h %cr %cn %Cgreen%s%Creset"
+
+    # pull / push
+    pl = pull
+    ps = push
+
+    # rebase
+    rc = rebase --continue
+    rs = rebase --skip
+
+    # remote / reset
+    r = remote -v
+    unstage = reset HEAD
+    uncommit = reset --soft HEAD^
+    filelog = log -u
+
+    # stash
+    ss = stash
+    sl = stash list
+    sa = stash apply
+    sd = stash drop
+
+    # status / tag
+    s = status
+    st = status
+    t = tag -n
+
+[push]
+    default = current
+    autoSetupRemote = true
+[pull]
+    rebase = false
+[branch]
+    autosetupmerge = true
+[merge]
+    conflictstyle = zdiff3
+[diff]
+    algorithm = histogram
+    mnemonicprefix = true
+[rerere]
+    enabled = true
+[advice]
+    statusHints = false
+[init]
+    defaultBranch = main

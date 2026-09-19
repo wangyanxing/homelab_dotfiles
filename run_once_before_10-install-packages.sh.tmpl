@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Cross-platform package installer for a fresh machine.
+# Runs once (chezmoi tracks its hash). Installs the modern CLI stack that this
+# dotfiles setup depends on. Safe to re-run: package managers skip installed pkgs.
+set -euo pipefail
+
+echo ">>> [dotfiles] bootstrapping packages ..."
+
+# ---------------------------------------------------------------------------
+# Package list (logical names). Mapped per-platform below.
+#   starship  - prompt
+#   zoxide    - `z` smart dir jump (replaces fasd)
+#   fzf       - fuzzy finder
+#   eza       - modern `ls` (ll)
+#   bat       - modern `cat`
+#   fd        - modern `find`
+#   ripgrep   - modern `grep` (rg)
+#   git-delta - pretty git diffs
+#   atuin     - shell history search/sync
+#   zellij    - terminal multiplexer
+#   neovim    - editor (LazyVim)
+#   mise      - runtime version manager (replaces rbenv/nvm, no prompt clutter)
+#   antidote  - zsh plugin manager
+# ---------------------------------------------------------------------------
+
+{{ if eq .chezmoi.os "darwin" -}}
+# ============================ macOS (Homebrew) ============================
+if ! command -v brew >/dev/null 2>&1; then
+  echo ">>> installing Homebrew ..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+brew_pkgs=(
+  starship zoxide fzf eza bat fd ripgrep git-delta atuin
+  zellij neovim mise antidote tmux
+)
+for pkg in "${brew_pkgs[@]}"; do
+  if brew list --formula "$pkg" >/dev/null 2>&1; then
+    echo "    ok   $pkg"
+  else
+    echo "    install $pkg"
+    brew install "$pkg"
+  fi
+done
+
+{{ else if eq .chezmoi.os "linux" -}}
+# ============================ Linux ============================
+# Prefer Homebrew on Linux too (gives us the same modern versions everywhere).
+# Fall back to apt for the base essentials.
+if command -v apt-get >/dev/null 2>&1; then
+  echo ">>> installing base packages via apt ..."
+  sudo apt-get update -y
+  sudo apt-get install -y \
+    zsh git curl file build-essential \
+    fzf bat fd-find ripgrep tmux
+  # Debian ships `batcat`/`fdfind`; symlink to conventional names.
+  mkdir -p "$HOME/.local/bin"
+  command -v batcat >/dev/null 2>&1 && ln -sf "$(command -v batcat)" "$HOME/.local/bin/bat"
+  command -v fdfind >/dev/null 2>&1 && ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
+fi
+
+# Homebrew on Linux for tools apt lacks / ships too old.
+if ! command -v brew >/dev/null 2>&1; then
+  echo ">>> installing Homebrew (Linux) ..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
+
+brew_pkgs=( starship zoxide eza git-delta atuin zellij neovim mise antidote )
+for pkg in "${brew_pkgs[@]}"; do
+  if brew list --formula "$pkg" >/dev/null 2>&1; then
+    echo "    ok   $pkg"
+  else
+    echo "    install $pkg"
+    brew install "$pkg"
+  fi
+done
+{{ end -}}
+
+echo ">>> [dotfiles] packages ready."

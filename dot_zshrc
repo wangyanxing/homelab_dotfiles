@@ -1,0 +1,30 @@
+# ============================================================================
+#  ~/.zshrc  -  interactive shell entry point
+#
+#  Load order (inspired by YADR, but lean & fully transparent):
+#    1. ~/.zsh.before/*.zsh   -> your machine-local overrides (BEFORE)
+#    2. ~/.config/zsh/*.zsh   -> the actual config modules (this repo)
+#    3. ~/.zsh.after/*.zsh    -> your machine-local overrides (AFTER)
+#
+#  Each module is small and commented. Read it, change it, own it.
+# ============================================================================
+
+ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+
+# --- 1. before hooks --------------------------------------------------------
+if [[ -d "$HOME/.zsh.before" ]]; then
+  for f in "$HOME"/.zsh.before/*.zsh(N); do source "$f"; done
+fi
+
+# --- 2. core modules (order matters) ---------------------------------------
+for module in options plugins aliases git functions tools; do
+  [[ -r "$ZSH_CONFIG_DIR/$module.zsh" ]] && source "$ZSH_CONFIG_DIR/$module.zsh"
+done
+
+# --- 3. after hooks ---------------------------------------------------------
+if [[ -d "$HOME/.zsh.after" ]]; then
+  for f in "$HOME"/.zsh.after/*.zsh(N); do source "$f"; done
+fi
+
+# --- secrets (never committed) ---------------------------------------------
+[[ -r "$HOME/.secrets" ]] && source "$HOME/.secrets"
