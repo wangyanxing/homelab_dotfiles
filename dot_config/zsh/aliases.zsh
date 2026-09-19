@@ -19,6 +19,17 @@ if command -v procs >/dev/null 2>&1; then
 else
   alias psg="ps aux | grep " # YADR muscle memory
 fi
+# psx <pattern>: list matching processes (keeps header, excludes the search itself).
+# `command grep` so it works even though `grep` is aliased to rg below.
+psx() {
+  ps auxww | { IFS= read -r header; printf '%s\n' "$header"; command grep -i -- "$*" | command grep -v "command grep -i"; }
+}
+# pk <pattern>: interactively pick matching process(es) via fzf and kill them.
+pk() {
+  local pid
+  pid=$(ps auxww | sed 1d | fzf -m --header='[kill] select process(es)' --query="$*" | awk '{print $2}')
+  [[ -n "$pid" ]] && echo "$pid" | xargs kill -"${KILL_SIGNAL:-15}"
+}
 
 # --- Moving around ----------------------------------------------------------
 alias cdb='cd -'

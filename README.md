@@ -99,6 +99,12 @@ zellij/neovim/mise/antidote/tmux + JetBrainsMono Nerd Font。
 
 > CLT 弹框和 sudo 密码是 macOS 的安全机制，**任何 dotfiles 方案都绕不开**；其余全程自动。
 
+> **没有管理员权限 / 装不了 Homebrew？** 脚本会自动降级：不再中断，改从 GitHub release
+> 拉静态二进制到 `~/.local/bin`（starship/zoxide/bat/fd/rg/delta/atuin/zellij/fzf/
+> lazygit/lazydocker/dust/duf/procs/glow/gh/neovim/mise），无需 sudo。唯一例外是
+> `eza`（无 macOS 二进制发布），此时 `ll` 自动回退到原生 `ls`。日后有权限了再装
+> Homebrew 并 `brew bundle --file ~/.config/homebrew/Brewfile` 即可补齐。
+
 #### Ubuntu / Linux：不需要 Homebrew
 
 Linux 分支**完全不装 Homebrew**。策略是：
@@ -226,15 +232,16 @@ homelab_dotfiles/                              # chezmoi source 目录
 │   ├── zsh/                                    # ~/.config/zsh/  拆分的 zsh 模块
 │   │   ├── options.zsh                         #   AUTO_CD / 补全 / history 等 setopt
 │   │   ├── plugins.zsh                         #   antidote 加载 + 键位绑定
-│   │   ├── aliases.zsh                         #   系统 alias（psg/ll/ar/ae/全局 alias）
+│   │   ├── aliases.zsh                         #   系统 alias（psg/psx/pk/ll/ar/ae/全局 alias）
 │   │   ├── git.zsh                             #   git alias（gpl/gcm/gl/gs/gco...）
 │   │   ├── functions.zsh                       #   函数（fn/mcd/extract）+ Ctrl-x Ctrl-l
 │   │   └── tools.zsh                           #   zoxide/fzf/atuin/mise/bat/starship 初始化
 │   ├── nvim/                                   # ~/.config/nvim/  LazyVim
 │   │   ├── init.lua
-│   │   ├── lazyvim.json                        #   语言 extras（py/js/ts/json/yaml/c++/docker...）
+│   │   ├── lazyvim.json                        #   语言 extras（py/js/ts/json/yaml/c++/docker/toml...）
 │   │   ├── lua/config/lazy.lua                 #   lazy.nvim 引导（禁用冗余内置插件）
 │   │   ├── lua/config/options.lua              #   编辑器选项（绝对行号等）
+│   │   ├── lua/config/keymaps.lua              #   自定义键位（居中跳转/移动行/系统剪贴板）
 │   │   └── lua/plugins/init.lua                #   自定义插件 / treesitter 解析器覆盖
 │   ├── zellij/                                 # ~/.config/zellij/
 │   │   ├── config.kdl                          #   主配置（tmux 风格前缀）
@@ -323,6 +330,8 @@ gd        # git diff
 # 系统
 ll        # eza -alh --git（彩色、带 git 状态）
 psg <x>   # procs（进程搜索，如 psg nginx；未装 procs 则回退 ps aux | grep）
+psx <x>   # 列出匹配进程（保留表头，如 psx node）
+pk <x>    # fzf 交互选中进程并 kill（默认 SIGTERM，可 KILL_SIGNAL=9 pk）
 lt        # eza --tree（目录树）
 
 # 现代扩展工具（装了才生效）

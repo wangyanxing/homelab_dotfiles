@@ -23,6 +23,35 @@ echo ">>> [dotfiles] bootstrapping packages ..."
 #   antidote  - zsh plugin manager
 # ---------------------------------------------------------------------------
 
+# --- shared helper: install a single-binary tool from a GitHub release ------
+# usage: gh_install <bin_name> <owner/repo> <asset_grep_pattern>
+# Robust: a failure here never aborts the whole bootstrap (runs in a subshell
+# with errexit disabled; network / rate-limit / missing-asset errors tolerated).
+gh_install() {
+  local bin="$1" repo="$2" pattern="$3"
+  if command -v "$bin" >/dev/null 2>&1; then echo "    ok   $bin"; return 0; fi
+  echo "    install $bin (github: $repo)"
+  ( set +e
+    url=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null \
+          | grep -oE '"browser_download_url": *"[^"]+"' \
+          | cut -d'"' -f4 \
+          | grep -Ev 'sha256|\.sig|\.sbom|server|musleabi|no-web' \
+          | grep -E "$pattern" | head -1)
+    if [[ -z "$url" ]]; then echo "    !! no asset for $bin ($pattern), skip"; exit 0; fi
+    tmp="$(mktemp -d)"
+    if ! curl -fsSL "$url" -o "$tmp/dl"; then echo "    !! download failed for $bin, skip"; rm -rf "$tmp"; exit 0; fi
+    case "$url" in
+      *.tar.gz|*.tgz) tar -xzf "$tmp/dl" -C "$tmp" 2>/dev/null ;;
+      *.zip)          unzip -q "$tmp/dl" -d "$tmp" 2>/dev/null ;;
+      *)              cp "$tmp/dl" "$tmp/$bin"; chmod +x "$tmp/$bin" ;;
+    esac
+    found="$(find "$tmp" -type f -name "$bin" | head -1)"
+    if [[ -n "$found" ]]; then install -m755 "$found" "$HOME/.local/bin/$bin" && echo "    done $bin"; else echo "    !! binary '$bin' not found in asset, skip"; fi
+    rm -rf "$tmp"
+  )
+  return 0
+}
+
 {{ if eq .chezmoi.os "darwin" -}}
 # ============================ macOS (Homebrew) ============================
 # Ensure Xcode Command Line Tools are present (git/clang). On a brand-new Mac
@@ -49,15 +78,68 @@ elif [[ -x /usr/local/bin/brew ]]; then
 fi
 
 # If brew still isn't available (no admin rights, install cancelled, or no TTY),
-# don't hard-fail: print manual steps and let chezmoi apply the config anyway.
+# don't hard-fail: fall back to pulling static binaries from GitHub releases
+# into ~/.local/bin (same approach as the Linux branch, no admin needed).
 if ! command -v brew >/dev/null 2>&1; then
+  echo ">>> Homebrew unavailable; falling back to GitHub-release binaries in ~/.local/bin ..."
+  echo "    (needs no admin rights; run brew later for a fuller setup — see README)"
+  mkdir -p "$HOME/.local/bin"
+  export PATH="$HOME/.local/bin:$PATH"
+
+  arch="$(uname -m)"                       # arm64 (Apple Silicon) or x86_64
+  rust_arch="$arch"
+  [[ "$arch" == "arm64" ]] && rust_arch="aarch64"   # rust triples use aarch64
+  amd_arch="${arch/x86_64/amd64}"          # fzf/gh use amd64 on Intel
+
+  # rust-triple style: <arch>-apple-darwin
+  gh_install starship starship/starship "${rust_arch}-apple-darwin.tar.gz$"
+  gh_install zoxide   ajeetdsouza/zoxide "${rust_arch}-apple-darwin.tar.gz$"
+  gh_install delta    dandavison/delta   "${rust_arch}-apple-darwin.tar.gz$"
+  gh_install zellij   zellij-org/zellij  "zellij-${rust_arch}-apple-darwin.tar.gz$"
+  gh_install atuin    atuinsh/atuin      "atuin-${rust_arch}-apple-darwin.tar.gz$"
+  gh_install bat      sharkdp/bat        "${rust_arch}-apple-darwin.tar.gz$"
+  gh_install fd       sharkdp/fd         "${rust_arch}-apple-darwin.tar.gz$"
+  gh_install rg       BurntSushi/ripgrep "${rust_arch}-apple-darwin.tar.gz$"
+  gh_install dust     bootandy/dust      "${rust_arch}-apple-darwin.tar.gz$"
+  gh_install procs    dalance/procs      "${rust_arch}-mac.zip$"
+  # go-style names. duf/lazygit/lazydocker/glow use literal arm64 / x86_64;
+  # fzf / gh use amd64 on Intel.
+  gh_install fzf        junegunn/fzf             "darwin_${amd_arch}.tar.gz$"
+  gh_install gh         cli/cli                  "macOS_${amd_arch}.zip$"
+  gh_install lazygit    jesseduffield/lazygit    "darwin_${arch}.tar.gz$"
+  gh_install lazydocker jesseduffield/lazydocker "Darwin_${arch}.tar.gz$"
+  gh_install glow       charmbracelet/glow       "Darwin_${arch}.tar.gz$"
+  gh_install duf        muesli/duf               "darwin_${arch}.tar.gz$"
+
+  # neovim (official macOS tarball)
+  if ! command -v nvim >/dev/null 2>&1; then
+    echo "    install neovim"
+    nvim_arch="x86_64"; [[ "$arch" == "arm64" ]] && nvim_arch="arm64"
+    tmp="$(mktemp -d)"
+    if curl -fsSL "https://github.com/neovim/neovim/releases/latest/download/nvim-macos-${nvim_arch}.tar.gz" -o "$tmp/nvim.tar.gz"; then
+      rm -rf "$HOME/.local/nvim"; mkdir -p "$HOME/.local/nvim"
+      tar -xzf "$tmp/nvim.tar.gz" -C "$HOME/.local/nvim" --strip-components=1 2>/dev/null
+      ln -sf "$HOME/.local/nvim/bin/nvim" "$HOME/.local/bin/nvim"
+    fi
+    rm -rf "$tmp"
+  fi
+
+  # mise (official installer -> ~/.local/bin)
+  if ! command -v mise >/dev/null 2>&1; then
+    echo "    install mise"
+    curl -fsSL https://mise.run | MISE_INSTALL_PATH="$HOME/.local/bin/mise" sh || true
+  fi
+
+  # antidote (zsh plugin manager, via git)
+  if [[ ! -d "$HOME/.antidote" ]]; then
+    git clone --depth=1 https://github.com/mattmc3/antidote.git "$HOME/.antidote" || true
+  fi
+
   cat <<'EOF'
-    !! Homebrew is still not available.
-       Your dotfiles/config were still applied — only the CLI tools are pending.
-       Finish setup manually (you must be an Administrator):
-         1) /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-         2) eval "$(/opt/homebrew/bin/brew shellenv)"
-         3) brew bundle --file ~/.config/homebrew/Brewfile
+    Note: eza (ll) has no macOS binary release; `ll` falls back to native ls.
+          For the full stack (eza, fonts, casks) install Homebrew later:
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            brew bundle --file ~/.config/homebrew/Brewfile
 EOF
   exit 0
 fi
@@ -98,38 +180,10 @@ if command -v apt-get >/dev/null 2>&1; then
   command -v fdfind >/dev/null 2>&1 && ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
 fi
 
-# --- helper: install a single-binary tool from a GitHub release tarball -----
-# From here on, individual tool failures must NOT abort the whole bootstrap.
+# --- from here on, individual tool failures must NOT abort the whole bootstrap
 set +e
-# usage: gh_install <bin_name> <owner/repo> <asset_grep_pattern>
-# Robust: a failure here never aborts the whole bootstrap (errexit disabled
-# locally, network/limit errors tolerated).
-gh_install() {
-  local bin="$1" repo="$2" pattern="$3"
-  if command -v "$bin" >/dev/null 2>&1; then echo "    ok   $bin"; return 0; fi
-  echo "    install $bin (github: $repo)"
-  ( set +e
-    url=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null \
-          | grep -oE '"browser_download_url": *"[^"]+"' \
-          | cut -d'"' -f4 \
-          | grep -Ev 'sha256|\.sig|\.sbom|server|musleabi' \
-          | grep -E "$pattern" | head -1)
-    if [[ -z "$url" ]]; then echo "    !! no asset for $bin ($pattern), skip"; exit 0; fi
-    tmp="$(mktemp -d)"
-    if ! curl -fsSL "$url" -o "$tmp/dl"; then echo "    !! download failed for $bin, skip"; rm -rf "$tmp"; exit 0; fi
-    case "$url" in
-      *.tar.gz|*.tgz) tar -xzf "$tmp/dl" -C "$tmp" 2>/dev/null ;;
-      *.zip)          unzip -q "$tmp/dl" -d "$tmp" 2>/dev/null ;;
-      *)              cp "$tmp/dl" "$tmp/$bin"; chmod +x "$tmp/$bin" ;;
-    esac
-    found="$(find "$tmp" -type f -name "$bin" | head -1)"
-    if [[ -n "$found" ]]; then install -m755 "$found" "$HOME/.local/bin/$bin" && echo "    done $bin"; else echo "    !! binary '$bin' not found in asset, skip"; fi
-    rm -rf "$tmp"
-  )
-  return 0
-}
 
-# --- modern CLI tools (static binaries) -------------------------------------
+# --- modern CLI tools (static binaries; gh_install defined at top of script) -
 gh_install starship starship/starship "${arch}-unknown-linux-gnu.tar.gz$"
 gh_install zoxide   ajeetdsouza/zoxide "${arch}-unknown-linux-musl.tar.gz$"
 gh_install eza      eza-community/eza  "${arch}-unknown-linux-gnu.tar.gz$"

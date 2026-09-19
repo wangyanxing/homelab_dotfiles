@@ -1,7 +1,7 @@
 -- Your custom plugins & overrides live here (files in lua/plugins/*.lua).
 -- Language support (LSP + formatting + completion) is enabled via LazyVim
 -- "extras" in lazyvim.json: python, json, yaml, typescript, clangd(c/c++),
--- docker, markdown, prettier. This file adds treesitter parsers for the
+-- docker, markdown, toml, prettier. This file adds treesitter parsers for the
 -- config-file / misc languages those extras don't already pull in.
 return {
   -- Colorscheme
