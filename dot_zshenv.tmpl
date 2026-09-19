@@ -1,16 +1,15 @@
 # ~/.zshenv - loaded for every zsh (login, interactive, scripts)
 # Keep this minimal: only env vars needed everywhere.
 
-# Ensure local bin (Linux symlinks for bat/fd) and Homebrew are on PATH.
+# ~/.local/bin holds Linux static binaries (starship, zoxide, ...) and the
+# bat/fd symlinks; ~/bin for personal scripts.
 export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
 
-# Homebrew (macOS Apple Silicon / Intel / Linuxbrew)
+# Homebrew (macOS Apple Silicon / Intel). Linux uses ~/.local/bin, no brew.
 if [[ -x /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [[ -x /usr/local/bin/brew ]]; then
   eval "$(/usr/local/bin/brew shellenv)"
-elif [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]]; then
-  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 
 # Default editor

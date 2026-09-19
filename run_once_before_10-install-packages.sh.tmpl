@@ -73,37 +73,80 @@ else
 fi
 
 {{ else if eq .chezmoi.os "linux" -}}
-# ============================ Linux ============================
-# Prefer Homebrew on Linux too (gives us the same modern versions everywhere).
-# Fall back to apt for the base essentials.
+# ============================ Linux (NO Homebrew) ============================
+# Strategy: apt for base tools; everything else pulled as a static binary from
+# each project's GitHub release into ~/.local/bin. No Homebrew, minimal sudo.
+mkdir -p "$HOME/.local/bin"
+export PATH="$HOME/.local/bin:$PATH"
+
+arch="$(uname -m)"   # x86_64 or aarch64
+
+# --- base packages via apt --------------------------------------------------
 if command -v apt-get >/dev/null 2>&1; then
   echo ">>> installing base packages via apt ..."
   sudo apt-get update -y
   sudo apt-get install -y \
-    zsh git curl file build-essential \
+    zsh git curl wget file unzip tar build-essential \
     fzf bat fd-find ripgrep tmux
-  # Debian ships `batcat`/`fdfind`; symlink to conventional names.
-  mkdir -p "$HOME/.local/bin"
+  # Debian/Ubuntu ship batcat/fdfind; symlink to conventional names.
   command -v batcat >/dev/null 2>&1 && ln -sf "$(command -v batcat)" "$HOME/.local/bin/bat"
   command -v fdfind >/dev/null 2>&1 && ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
 fi
 
-# Homebrew on Linux for tools apt lacks / ships too old.
-if ! command -v brew >/dev/null 2>&1; then
-  echo ">>> installing Homebrew (Linux) ..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+# --- helper: install a single-binary tool from a GitHub release tarball -----
+# usage: gh_install <bin_name> <owner/repo> <asset_grep_pattern>
+gh_install() {
+  local bin="$1" repo="$2" pattern="$3"
+  if command -v "$bin" >/dev/null 2>&1; then echo "    ok   $bin"; return; fi
+  echo "    install $bin (github: $repo)"
+  local url
+  url=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" \
+        | grep -oE '"browser_download_url": *"[^"]+"' \
+        | cut -d'"' -f4 | grep -E "$pattern" | head -1)
+  if [[ -z "$url" ]]; then echo "    !! no matching asset for $bin ($pattern)"; return; fi
+  local tmp; tmp="$(mktemp -d)"
+  curl -fsSL "$url" -o "$tmp/dl"
+  case "$url" in
+    *.tar.gz|*.tgz) tar -xzf "$tmp/dl" -C "$tmp" ;;
+    *.zip)          unzip -q "$tmp/dl" -d "$tmp" ;;
+    *)              cp "$tmp/dl" "$tmp/$bin"; chmod +x "$tmp/$bin" ;;
+  esac
+  local found; found="$(find "$tmp" -type f -name "$bin" | head -1)"
+  if [[ -n "$found" ]]; then install -m755 "$found" "$HOME/.local/bin/$bin"; fi
+  rm -rf "$tmp"
+}
+
+# --- modern CLI tools (static binaries) -------------------------------------
+gh_install starship starship/starship "${arch}-unknown-linux-gnu.tar.gz"
+gh_install zoxide   ajeetdsouza/zoxide "${arch}-unknown-linux-musl.tar.gz"
+gh_install eza      eza-community/eza  "${arch}-unknown-linux-gnu.tar.gz"
+gh_install delta    dandavison/delta   "${arch}-unknown-linux-gnu.tar.gz"
+gh_install zellij   zellij-org/zellij  "${arch}-unknown-linux-musl.tar.gz"
+gh_install atuin    atuinsh/atuin      "${arch}-unknown-linux-gnu.tar.gz"
+
+# --- mise (official installer -> ~/.local/bin) ------------------------------
+if ! command -v mise >/dev/null 2>&1; then
+  echo "    install mise"
+  curl -fsSL https://mise.run | MISE_INSTALL_PATH="$HOME/.local/bin/mise" sh
 fi
 
-brew_pkgs=( starship zoxide eza git-delta atuin zellij neovim mise antidote )
-for pkg in "${brew_pkgs[@]}"; do
-  if brew list --formula "$pkg" >/dev/null 2>&1; then
-    echo "    ok   $pkg"
-  else
-    echo "    install $pkg"
-    brew install "$pkg"
+# --- neovim (full tarball; apt's version is too old for LazyVim) ------------
+if ! command -v nvim >/dev/null 2>&1; then
+  echo "    install neovim"
+  nvim_arch="$arch"; [[ "$arch" == "aarch64" ]] && nvim_arch="arm64"
+  tmp="$(mktemp -d)"
+  if curl -fsSL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${nvim_arch}.tar.gz" -o "$tmp/nvim.tar.gz"; then
+    rm -rf "$HOME/.local/nvim"; mkdir -p "$HOME/.local/nvim"
+    tar -xzf "$tmp/nvim.tar.gz" -C "$HOME/.local/nvim" --strip-components=1
+    ln -sf "$HOME/.local/nvim/bin/nvim" "$HOME/.local/bin/nvim"
   fi
-done
+  rm -rf "$tmp"
+fi
+
+# --- antidote (zsh plugin manager, via git) ---------------------------------
+if [[ ! -d "$HOME/.antidote" ]]; then
+  git clone --depth=1 https://github.com/mattmc3/antidote.git "$HOME/.antidote"
+fi
 {{ end -}}
 
 echo ">>> [dotfiles] packages ready."

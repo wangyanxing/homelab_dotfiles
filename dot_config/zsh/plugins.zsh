@@ -3,11 +3,12 @@
 #  Only the plugins you actually depend on. No prezto megaframework.
 # ============================================================================
 
-# Locate antidote (brew on mac/linux, or git clone fallback).
-if [[ -r "$(brew --prefix 2>/dev/null)/opt/antidote/share/antidote/antidote.zsh" ]]; then
-  source "$(brew --prefix)/opt/antidote/share/antidote/antidote.zsh"
-elif [[ -r "$HOME/.antidote/antidote.zsh" ]]; then
+# Locate antidote: git clone under ~/.antidote (all platforms), or Homebrew
+# (macOS). Linux installs it to ~/.antidote via the bootstrap script.
+if [[ -r "$HOME/.antidote/antidote.zsh" ]]; then
   source "$HOME/.antidote/antidote.zsh"
+elif command -v brew >/dev/null 2>&1 && [[ -r "$(brew --prefix)/opt/antidote/share/antidote/antidote.zsh" ]]; then
+  source "$(brew --prefix)/opt/antidote/share/antidote/antidote.zsh"
 else
   git clone --depth 1 https://github.com/mattmc3/antidote.git "$HOME/.antidote" 2>/dev/null
   source "$HOME/.antidote/antidote.zsh"

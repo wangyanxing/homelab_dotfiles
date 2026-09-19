@@ -62,13 +62,17 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply <你的GitHub用户名>/hom
 
 `chezmoi init --apply` 会自动：
 1. 拉取本仓库到 `~/.local/share/chezmoi`
-2. 运行 `run_once_before_10-install-packages.sh`（自动装 Homebrew + starship/zoxide/eza/...
-   全套工具 + JetBrainsMono Nerd Font）
+2. 运行 `run_once_before_10-install-packages.sh` 装齐所有依赖（macOS 与 Linux 策略不同，见下）
 3. 把所有配置写入 `$HOME`
 
 首次启动 zsh 时，antidote 会自动 clone 并编译 zsh 插件（约十几秒，仅一次）。
 
-#### ⚠️ 全新 macOS 上并非「零干预」，有几步需要你手动配合
+#### macOS：用 Homebrew
+
+安装脚本会自动装 Homebrew + starship/zoxide/eza/fzf/bat/fd/ripgrep/delta/atuin/
+zellij/neovim/mise/antidote/tmux + JetBrainsMono Nerd Font。
+
+**并非「零干预」，有几步需你配合：**
 
 | 环节 | 你要做什么 | 说明 |
 |---|---|---|
@@ -77,17 +81,51 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply <你的GitHub用户名>/hom
 | 重开终端 | 装完后 `exec zsh` 或新开窗口 | prompt / 插件需新 shell 加载 |
 | 首次启动 | 新 shell 第一次卡十几秒 | antidote 在 clone 5 个 zsh 插件 |
 | Neovim 首次打开 | 第一次 `nvim` 自动装插件 | LazyVim 拉插件 |
-| Ghostty 字体 | 通常无需操作 | 字体已随本仓库自动安装，Ghostty 配置也已纳入管理并指向该字体 |
+| Ghostty 字体 | 通常无需操作 | 字体已随本仓库自动安装，Ghostty 配置也已纳入管理 |
 
-> 这些手动步骤（尤其 CLT 弹框和 sudo 密码）是 macOS 的安全机制，**任何 dotfiles 方案都绕不开**。
-> 除此之外全程自动。
+> CLT 弹框和 sudo 密码是 macOS 的安全机制，**任何 dotfiles 方案都绕不开**；其余全程自动。
+
+#### Ubuntu / Linux：不需要 Homebrew
+
+Linux 分支**完全不装 Homebrew**。策略是：
+
+- **apt** 装基础工具：`zsh git curl wget file unzip tar build-essential`、
+  `fzf bat fd-find ripgrep tmux`（`batcat`/`fdfind` 自动软链成 `bat`/`fd`）
+- **GitHub release 静态二进制**装到 `~/.local/bin`：`starship zoxide eza delta zellij atuin`
+- **官方安装器**：`mise`（→ `~/.local/bin`）、`neovim`（官方 tarball，因为 apt 版本太旧带不动 LazyVim）
+- **git clone**：`antidote`（→ `~/.antidote`）
+
+自动支持 `x86_64` 和 `aarch64`（ARM）两种架构。
+
+**Ubuntu 上需你配合的几步：**
+
+```sh
+# 1. 先装 git 和 curl（如果没有）
+sudo apt update && sudo apt install -y git curl
+
+# 2. 一键安装（脚本里的 apt 部分会要一次 sudo 密码）
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply <你的GitHub用户名>/homelab_dotfiles
+
+# 3. 把默认 shell 切成 zsh（Ubuntu 默认是 bash）
+chsh -s "$(command -v zsh)"
+
+# 4. 重新登录（或 exec zsh）让一切生效
+exec zsh
+```
+
+| 环节 | 说明 |
+|---|---|
+| sudo 密码 | 仅 apt 装基础包时输一次；其余工具装到 `~/.local/bin`，无需 sudo |
+| `~/.local/bin` 在 PATH 里 | 已由 `~/.zshenv` 保证 |
+| 默认 shell | 需手动 `chsh -s $(which zsh)`，Ubuntu 不会自动切 |
+| 字体 | 脚本不自动装 Linux 字体；如需 Nerd Font 图标，在你的终端模拟器里自行装 JetBrainsMono Nerd Font 即可 |
+| Neovim 首次打开 | 第一次 `nvim` 自动装 LazyVim 插件 |
 
 #### 与「样子一致」相关的说明
 
-- **字体**：安装脚本会自动装 `JetBrainsMono Nerd Font`，Ghostty 配置（`~/.config/ghostty/config`）
-  也已纳入管理并引用它，starship 的分支符号 / 状态圆点即可正常显示。
 - **`z` 记忆为空**：zoxide 数据库不跨机器同步，新机上 `z down` 一开始跳不动，正常 `cd` 几次喂给它即可。
 - **主机名**：prompt 里 `@host` 会显示新机的主机名，属预期。
+- **Linux 图标**：starship 的分支符号/圆点需终端使用 Nerd Font；未装则可能显示为方框，功能不受影响。
 
 
 ### 在已有机器上应用
@@ -125,9 +163,9 @@ chezmoi 约定：`dot_xxx` → `~/.xxx`，`.tmpl` 结尾为模板，`run_once_be
 homelab_dotfiles/                              # chezmoi source 目录
 ├── .chezmoi.toml.tmpl                         # chezmoi 配置模板（editor 等变量）
 ├── .chezmoiignore                             # 不纳入管理的文件（README/LICENSE/.git）
-├── run_once_before_10-install-packages.sh.tmpl# 新机器自动安装依赖（brew/apt，跨平台）
+├── run_once_before_10-install-packages.sh.tmpl# 新机器自动装依赖（macOS 用 brew；Linux 用 apt+二进制）
 │
-├── dot_zshenv.tmpl                            # ~/.zshenv  环境变量、PATH、Homebrew
+├── dot_zshenv.tmpl                            # ~/.zshenv  环境变量、PATH（含 ~/.local/bin、macOS brew）
 ├── dot_zshrc                                  # ~/.zshrc   加载链入口
 ├── dot_zsh_plugins.txt                        # ~/.zsh_plugins.txt  antidote 插件清单
 │
@@ -310,7 +348,7 @@ chezmoi add ~/.foorc       # 把一个新文件纳入管理
 
 - **加 zsh 插件**：编辑 `~/.zsh_plugins.txt`，加一行 `owner/repo`，重启 shell。
 - **加 alias**：`ae` 或直接编辑 `dot_config/zsh/aliases.zsh` / `git.zsh`。
-- **加安装的软件**：编辑 `run_once_before_10-install-packages.sh.tmpl` 的 `brew_pkgs` / apt 列表。
+- **加安装的软件**：编辑 `run_once_before_10-install-packages.sh.tmpl`（macOS 改 `brew_pkgs`；Linux 改 apt 列表或加一行 `gh_install`）。
 - **改 prompt**：编辑 `dot_config/starship.toml`。
 - **加 nvim 插件**：在 `dot_config/nvim/lua/plugins/` 下加 `.lua` 文件。
 
