@@ -27,6 +27,7 @@
 - [各组件说明](#各组件说明)
 - [常见操作速查](#常见操作速查)
 - [自定义与扩展](#自定义与扩展)
+- [常见问题排查](#常见问题排查)
 - [卸载 / 回滚](#卸载--回滚)
 
 ---
@@ -389,6 +390,64 @@ chezmoi add ~/.foorc       # 把一个新文件纳入管理
 - **加安装的软件**：编辑 `run_once_before_10-install-packages.sh.tmpl`（macOS 改 `brew_pkgs`；Linux 改 apt 列表或加一行 `gh_install`）。
 - **改 prompt**：编辑 `dot_config/starship.toml`。
 - **加 nvim 插件**：在 `dot_config/nvim/lua/plugins/` 下加 `.lua` 文件。
+
+---
+
+## 常见问题排查
+
+### `zsh: command not found: chezmoi`
+
+`get.chezmoi.io` 安装脚本**默认把二进制装到运行命令时所在目录的 `./bin/chezmoi`**
+（不是 `~/.local/bin`），所以新终端里可能找不到 `chezmoi`。
+
+```sh
+# 1. 找到 chezmoi 被装到哪了
+find ~ -name chezmoi -type f 2>/dev/null
+# 常见结果：~/bin/chezmoi 或 你当初运行安装命令的目录/bin/chezmoi
+
+# 2a. 临时用全路径跑（把路径换成上面找到的）
+~/projects/bin/chezmoi update
+
+# 2b. 或一劳永逸：重装到 ~/.local/bin（本仓库 PATH 认这个位置）
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
+# 之后
+~/.local/bin/chezmoi update
+exec zsh          # 重载后 chezmoi 就在 PATH 里了
+```
+
+> 建议初次安装就带 `-b ~/.local/bin` 指定位置，避免这个坑：
+> ```sh
+> sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply git@github.com:wangyanxing/homelab_dotfiles.git
+> ```
+
+### clone 报 `Authentication failed ... Password authentication is not supported`
+
+私有仓库用 HTTPS clone 会失败（GitHub 不再支持密码认证）。改用 **SSH URL**：
+
+```sh
+chezmoi init --apply git@github.com:wangyanxing/homelab_dotfiles.git
+# 前提：本机 SSH key 已加到 GitHub。测试：ssh -T git@github.com
+```
+
+### `<文件> has changed since chezmoi last wrote it`
+
+你手动改过该文件、同时源也更新了，chezmoi 停下来保护你的改动。
+
+```sh
+# 看差异（左=源，右=你的当前文件）
+diff ~/.local/share/chezmoi/dot_config/zsh/aliases.zsh ~/.config/zsh/aliases.zsh
+```
+- 想保留手动改动 → 先把它挪进 `~/.zsh.after/`（本机专属，不进共享源）
+- 确认可丢弃、直接采用源版本 → `chezmoi apply --force <该文件>`
+
+### vim 背景色错乱 / `neocomplete requires Vim ...` 报错
+
+这是旧 YADR 的 `~/.vimrc` 软链还在，`vim` 加载了它。清掉即可：
+
+```sh
+mv ~/.vimrc ~/.vim ~/.vimrc.before ~/.vimrc.after ~/dotfiles-backup/ 2>/dev/null
+```
+本配置的 `vim`/`vi` 已别名到 `nvim`（LazyVim），清掉 YADR 软链后重开终端即正常。
 
 ---
 
