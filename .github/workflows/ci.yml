@@ -20,7 +20,7 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           # execute-template runs with this runner's OS (linux), so this
           # renders and validates the Linux branch of the install script.
-          chezmoi execute-template --init \
+          chezmoi execute-template --init --no-tty \
             --promptString name=ci --promptString email=ci@example.com \
             < run_once_before_10-install-packages.sh.tmpl > /tmp/install.sh
           bash -n /tmp/install.sh && echo "install script syntax OK"
@@ -46,7 +46,7 @@ jobs:
       - name: chezmoi init (repo as source) + list managed
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          chezmoi init --source "$PWD" \
+          chezmoi init --source "$PWD" --no-tty \
             --promptString name=ci --promptString email=ci@example.com
           echo "== managed files =="
           chezmoi managed --source "$PWD" | head -60
