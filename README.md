@@ -57,12 +57,22 @@
 
 ### 全新机器一键安装
 
-只需机器上有 `git` 和 `curl`：
+只需机器上有 `git` 和 `curl`。本仓库是 **private**，用 SSH 拉取（`<用户名>/repo` 简写会走 HTTPS，
+GitHub 已不支持密码认证，会失败）：
 
 ```sh
+# 前提：本机 SSH key 已加到 GitHub。验证：ssh -T git@github.com
 # 安装 chezmoi 并从你的 GitHub 仓库初始化 + 应用
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply <你的GitHub用户名>/homelab_dotfiles
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply git@github.com:wangyanxing/homelab_dotfiles.git
 ```
+
+> 还没配 SSH key？先生成并加到 GitHub：
+> ```sh
+> ssh-keygen -t ed25519 -C "你的邮箱"        # 一路回车
+> cat ~/.ssh/id_ed25519.pub                    # 复制输出
+> # 打开 https://github.com/settings/keys → New SSH key → 粘贴保存
+> ssh -T git@github.com                        # 出现 "successfully authenticated" 即可
+> ```
 
 `chezmoi init --apply` 会自动：
 1. 拉取本仓库到 `~/.local/share/chezmoi`
@@ -144,7 +154,7 @@ exec zsh
 brew install chezmoi
 
 # 从 GitHub 初始化（拉到 ~/.local/share/chezmoi，不修改任何 HOME 文件）
-chezmoi init wangyanxing/homelab_dotfiles
+chezmoi init git@github.com:wangyanxing/homelab_dotfiles.git
 
 # 只读预览：将会对 $HOME 做哪些改动
 chezmoi diff
@@ -172,7 +182,7 @@ mkdir -p ~/dotfiles-backup
 mv ~/.zshrc ~/.zshenv ~/.gitconfig ~/.tmux.conf ~/.vimrc ~/dotfiles-backup/ 2>/dev/null
 
 # 4. 用 chezmoi 拉取并应用（自动跑 apt + 装二进制到 ~/.local/bin，无需 brew）
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply wangyanxing/homelab_dotfiles
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply git@github.com:wangyanxing/homelab_dotfiles.git
 
 # 5. 把默认 shell 切成 zsh（YADR 可能已切过，跑一下确保）
 chsh -s "$(command -v zsh)"
