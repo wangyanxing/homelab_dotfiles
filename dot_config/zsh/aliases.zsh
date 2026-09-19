@@ -65,6 +65,12 @@ command -v btop    >/dev/null 2>&1 && alias top='btop'
 command -v lazygit >/dev/null 2>&1 && alias lg='lazygit'
 command -v lazydocker >/dev/null 2>&1 && alias lzd='lazydocker'
 
+# zellij preset layouts
+if command -v zellij >/dev/null 2>&1; then
+  alias zq='zellij --layout quad'   # 4-pane grid
+  alias zd='zellij --layout dual'   # left | right columns
+fi
+
 # --- Alias editing (YADR: ae / ar) ------------------------------------------
 # ae = alias edit, ar = alias reload. See functions.zsh for the reload trap.
 alias ae="\${EDITOR:-nvim} ${XDG_CONFIG_HOME:-$HOME/.config}/zsh/aliases.zsh"

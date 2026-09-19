@@ -1,0 +1,10 @@
+// Two-column layout (left | right).  Use: zellij --layout dual
+layout {
+    pane split_direction="vertical" {
+        pane
+        pane
+    }
+    pane size=1 borderless=true {
+        plugin location="zellij:status-bar"
+    }
+}

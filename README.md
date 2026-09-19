@@ -44,8 +44,8 @@
 | 输入目录名即跳转 | `AUTO_CD` | 不用敲 `cd` |
 | 现代 CLI | eza / bat / fd / ripgrep / delta / fzf / atuin | `ll` `cat` `find` `grep` `git diff` 全面升级 |
 | 现代 CLI（扩展） | lazygit / lazydocker / jq / yq / dust / duf / procs / btop / gh / tldr / glow / httpie | git·docker TUI、JSON/YAML、磁盘/进程监控、GitHub CLI 等 |
-| 编辑器 | **Neovim + LazyVim** | 轻量起步，禁用冗余内置插件 |
-| 终端复用 | **zellij**（含 tmux 风格 Ctrl-b 前缀）+ tmux 兜底 | 降低从 tmux 迁移的不适应 |
+| 编辑器 | **Neovim + LazyVim** | 语言支持：Python/JS/TS/JSON/YAML/C·C++/Docker/Markdown（LSP+格式化）+ 常见配置文件 treesitter |
+| 终端复用 | **zellij**（tmux 风格 Ctrl-b 前缀 + `quad`/`dual` 预设布局）+ tmux 兜底 | 降低从 tmux 迁移的不适应 |
 | 运行时版本管理 | **mise** | 替代 rbenv/nvm，且**不污染 prompt** |
 | zsh 插件管理 | **antidote** | 静态编译缓存，启动快 |
 | zsh 插件 | autosuggestions / syntax-highlighting / substring-search / fzf-tab / completions / you-should-use | 补全·高亮·历史·别名提醒 |
@@ -221,9 +221,13 @@ homelab_dotfiles/                              # chezmoi source 目录
 │   │   └── tools.zsh                           #   zoxide/fzf/atuin/mise/bat/starship 初始化
 │   ├── nvim/                                   # ~/.config/nvim/  LazyVim
 │   │   ├── init.lua
-│   │   └── lua/config/lazy.lua                 #   lazy.nvim 引导（禁用冗余内置插件）
-│   │   └── lua/plugins/init.lua                #   你的自定义插件 / 覆盖
-│   ├── zellij/config.kdl                       # ~/.config/zellij/config.kdl（tmux 风格前缀）
+│   │   ├── lazyvim.json                        #   语言 extras（py/js/ts/json/yaml/c++/docker...）
+│   │   ├── lua/config/lazy.lua                 #   lazy.nvim 引导（禁用冗余内置插件）
+│   │   ├── lua/config/options.lua              #   编辑器选项（绝对行号等）
+│   │   └── lua/plugins/init.lua                #   自定义插件 / treesitter 解析器覆盖
+│   ├── zellij/                                 # ~/.config/zellij/
+│   │   ├── config.kdl                          #   主配置（tmux 风格前缀）
+│   │   └── layouts/                            #   预设布局：quad（四宫格）/ dual（左右双栏）
 │   └── ghostty/config                          # ~/.config/ghostty/config  终端字体/主题/配色
 │
 ├── dot_gitconfig.tmpl                         # ~/.gitconfig  git 子命令别名 + delta
@@ -316,6 +320,8 @@ lzd       # lazydocker（docker TUI）
 du        # dust（磁盘占用树）
 df        # duf（磁盘概览）
 top       # btop（系统监控）
+zq        # zellij 四宫格布局
+zd        # zellij 左右双栏布局
 # 直接命令：jq / yq（JSON·YAML）、gh（GitHub CLI）、tldr（命令示例）、
 #           glow file.md（渲染 Markdown）、http（HTTPie 调 API）
 
@@ -374,8 +380,13 @@ gar  # 让所有已打开的 zsh 会话都重新加载 alias
 - **antidote** — zsh 插件管理器。插件清单在 `~/.zsh_plugins.txt`，改动后下次启动自动重编译缓存。
 - **zoxide / fzf / eza / bat / fd / ripgrep / delta / atuin** — 现代 CLI，均在 `tools.zsh` 里做了「存在才启用」的安全初始化，缺任何一个都不会让 shell 报错。
 - **mise** — 运行时（node/python/...）版本管理，`eval "$(mise activate zsh)"`，**刻意不在 prompt 显示版本号**。
-- **LazyVim** — Neovim 发行版；首次打开 `nvim` 会自动安装插件。自定义放 `~/.config/nvim/lua/plugins/`。
-- **zellij** — 终端复用器，配置里加了 **Ctrl-b 前缀的 tmux 兼容模式**（`Ctrl-b` 后 `%` 竖分屏、`"` 横分屏、`c` 新标签、`hjkl` 切换面板），降低 tmux 用户的迁移成本。
+- **LazyVim** — Neovim 发行版；首次打开 `nvim` 会自动安装插件。语言支持通过 `lazyvim.json`
+  的 extras 启用：Python / JavaScript·TypeScript / JSON / YAML / C·C++(clangd) / Docker /
+  Markdown（含 LSP、补全、格式化 prettier），配置文件类语言的 treesitter 高亮在
+  `lua/plugins/init.lua`。自定义放 `~/.config/nvim/lua/plugins/`。
+- **zellij** — 终端复用器，配置里加了 **Ctrl-b 前缀的 tmux 兼容模式**（`Ctrl-b` 后 `%` 竖分屏、
+  `"` 横分屏、`c` 新标签、`hjkl` 切换面板）。另带两个预设布局：
+  `zq`（四宫格 `zellij --layout quad`）、`zd`（左右双栏 `zellij --layout dual`）。
 - **tmux** — 保留 `~/.tmux.conf` 作为兜底。
 
 ---
