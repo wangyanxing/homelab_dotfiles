@@ -130,28 +130,66 @@ exec zsh
 
 ### 在已有机器上应用
 
-已经在用别的 dotfiles（如 YADR）时，**建议先看差异、备份，再应用**：
+已经在用别的 dotfiles（如 YADR）时，**建议先看差异、备份，再应用**。
+旧的 `~/.yadr` 目录**不用删**，备份掉它占用的入口软链即可，随时能回滚。
+
+#### macOS（从 YADR 迁移）
 
 ```sh
-# 安装 chezmoi（macOS）
+# 安装 chezmoi
 brew install chezmoi
 
-# 用本仓库作为 source 初始化（不会修改任何文件）
-chezmoi init --source /path/to/homelab_dotfiles
+# 从 GitHub 初始化（拉到 ~/.local/share/chezmoi，不修改任何 HOME 文件）
+chezmoi init wangyanxing/homelab_dotfiles
 
 # 只读预览：将会对 $HOME 做哪些改动
 chezmoi diff
 
-# 确认无误后再真正写入
+# 备份 YADR 的入口软链（不删 ~/.yadr 本体）
+mkdir -p ~/dotfiles-backup
+mv ~/.zshrc ~/.zshenv ~/.gitconfig ~/.tmux.conf ~/dotfiles-backup/ 2>/dev/null
+
+# 应用新配置
 chezmoi apply
+exec zsh
 ```
 
-> ⚠️ 如果你现有的 `~/.zshrc` `~/.gitconfig` 等是指向旧 dotfiles 的**软链**，
-> apply 前请先把它们移走备份：
-> ```sh
-> mkdir -p ~/dotfiles-backup
-> mv ~/.zshrc ~/.zshenv ~/.gitconfig ~/.tmux.conf ~/dotfiles-backup/ 2>/dev/null
-> ```
+#### Ubuntu / Linux（从 YADR 迁移）
+
+```sh
+# 1. 确保有 git 和 curl
+sudo apt update && sudo apt install -y git curl
+
+# 2. 先看看 YADR 占用了哪些入口文件（确认是不是指向 ~/.yadr 的软链）
+ls -la ~/.zshrc ~/.zshenv ~/.gitconfig ~/.tmux.conf ~/.vimrc 2>/dev/null
+
+# 3. 备份 YADR 的入口软链/文件（不删 ~/.yadr 本体，可随时回滚）
+mkdir -p ~/dotfiles-backup
+mv ~/.zshrc ~/.zshenv ~/.gitconfig ~/.tmux.conf ~/.vimrc ~/dotfiles-backup/ 2>/dev/null
+
+# 4. 用 chezmoi 拉取并应用（自动跑 apt + 装二进制到 ~/.local/bin，无需 brew）
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply wangyanxing/homelab_dotfiles
+
+# 5. 把默认 shell 切成 zsh（YADR 可能已切过，跑一下确保）
+chsh -s "$(command -v zsh)"
+
+# 6. 重新登录，或直接：
+exec zsh
+```
+
+**回滚到 YADR**（如果想退回去）：
+
+```sh
+mv ~/dotfiles-backup/.zshrc ~/.zshrc     # 把软链搬回来（其他文件同理）
+exec zsh
+```
+
+> 说明：
+> - `~/.zshrc` 只能有一份，YADR 与本配置**不能同时生效**，靠备份/还原切换。
+> - 第 2 步若显示 `~/.zshrc -> /home/你/.yadr/...`，即为 YADR 软链，备份掉即可。
+> - Ubuntu 默认 shell 是 bash，需手动 `chsh` 切 zsh（第 5 步）。
+> - Nerd Font 图标需在你的终端模拟器里自行安装 JetBrainsMono Nerd Font。
+
 
 ---
 
