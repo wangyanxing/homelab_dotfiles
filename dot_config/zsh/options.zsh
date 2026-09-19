@@ -16,12 +16,14 @@ setopt CORRECT              # offer to correct mistyped commands
 
 # --- History ----------------------------------------------------------------
 HISTFILE="$HOME/.zsh_history"
-HISTSIZE=100000
-SAVEHIST=100000
+HISTSIZE=500000
+SAVEHIST=500000
 setopt EXTENDED_HISTORY       # timestamp each entry
 setopt INC_APPEND_HISTORY     # write immediately, not on exit
 setopt SHARE_HISTORY          # share across sessions
-setopt HIST_IGNORE_ALL_DUPS   # dedupe
+setopt HIST_IGNORE_DUPS       # don't record a cmd identical to the previous one
+setopt HIST_SAVE_NO_DUPS      # don't write duplicate entries to the history file
+setopt HIST_FIND_NO_DUPS      # skip duplicates when searching (Up-arrow / substring)
 setopt HIST_IGNORE_SPACE      # cmd starting with space -> not saved
 setopt HIST_REDUCE_BLANKS
 setopt HIST_VERIFY            # expand !! etc. before running
