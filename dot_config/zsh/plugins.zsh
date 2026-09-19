@@ -35,3 +35,11 @@ bindkey '^[OB' history-substring-search-down
 
 # autosuggestions: accept with Right-arrow / End (default), tune color
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+
+# --- history-substring-search behavior --------------------------------------
+# highlight style for the matched command when found
+HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=cyan,fg=black,bold'
+# highlight style when nothing matches
+HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_NOT_FOUND='bg=red,fg=white,bold'
+# 'i' = case-insensitive (typing "CU" also matches "curl")
+HISTORY_SUBSTRING_SEARCH_GLOBBING_FLAGS='i'
