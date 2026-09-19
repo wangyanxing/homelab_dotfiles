@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install chezmoi
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+
+      - name: Render Linux install script & syntax check
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          # execute-template runs with this runner's OS (linux), so this
+          # renders and validates the Linux branch of the install script.
+          chezmoi execute-template --init \
+            --promptString name=ci --promptString email=ci@example.com \
+            < run_once_before_10-install-packages.sh.tmpl > /tmp/install.sh
+          bash -n /tmp/install.sh && echo "install script syntax OK"
+
+      - name: shellcheck
+        run: |
+          sudo apt-get update -y && sudo apt-get install -y shellcheck
+          shellcheck -S warning -e SC1090,SC1091,SC2296,SC2298 /tmp/install.sh || true
+
+      - name: zsh parse check
+        run: |
+          sudo apt-get install -y zsh
+          for f in dot_config/zsh/*.zsh dot_zshrc; do
+            zsh -n "$f" && echo "OK: $f"
+          done
+
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install chezmoi
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+      - name: chezmoi init (repo as source) + list managed
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          chezmoi init --source "$PWD" \
+            --promptString name=ci --promptString email=ci@example.com
+          echo "== managed files =="
+          chezmoi managed --source "$PWD" | head -60

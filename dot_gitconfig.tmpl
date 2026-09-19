@@ -1,16 +1,15 @@
 # ~/.gitconfig  (managed by chezmoi)
 # Git subcommand aliases here back the shell aliases in ~/.config/zsh/git.zsh
 # (gl -> git l, gcm -> git commit -m, gco -> git checkout, gnb -> git nb ...).
+# Identity (name/email) comes from chezmoi data, prompted once on `chezmoi init`.
 
 [user]
-{{ if (env "GIT_AUTHOR_NAME") -}}
-    name = {{ env "GIT_AUTHOR_NAME" | quote }}
-{{ else -}}
-    # set via ~/.gitconfig.user (not committed) or edit here
-{{ end -}}
+    name = {{ (.name | default "") | quote }}
+    email = {{ (.email | default "") | quote }}
 
 [include]
-    # machine-local / private identity & overrides (never committed)
+    # optional machine-local / private overrides (never committed).
+    # Create ~/.gitconfig.user to override identity or add work-specific config.
     path = ~/.gitconfig.user
 
 [core]

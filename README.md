@@ -398,9 +398,52 @@ chezmoi add ~/.foorc       # 把一个新文件纳入管理
 
 - **加 zsh 插件**：编辑 `~/.zsh_plugins.txt`，加一行 `owner/repo`，重启 shell。
 - **加 alias**：`ae` 或直接编辑 `dot_config/zsh/aliases.zsh` / `git.zsh`。
-- **加安装的软件**：编辑 `run_once_before_10-install-packages.sh.tmpl`（macOS 改 `brew_pkgs`；Linux 改 apt 列表或加一行 `gh_install`）。
+- **加安装的软件**：
+  - macOS → 编辑 `dot_config/homebrew/Brewfile`（`brew`/`cask` 一行一个）
+  - Linux → 编辑 `run_once_before_10-install-packages.sh.tmpl`（apt 列表或加一行 `gh_install`）
 - **改 prompt**：编辑 `dot_config/starship.toml`。
 - **加 nvim 插件**：在 `dot_config/nvim/lua/plugins/` 下加 `.lua` 文件。
+
+### 健康自检：dotfiles-doctor
+
+装完或想确认环境是否完整时：
+
+```sh
+dotfiles-doctor    # 检查所有工具是否就位、配置文件、默认 shell、PATH、git 身份
+```
+输出 `ok / warn / missing` 汇总，缺东西会提示如何补装。
+
+### git 身份
+
+`chezmoi init` 时会**交互式询问一次** git 用户名和邮箱，存入 chezmoi data，
+自动写进 `~/.gitconfig`。想改：`chezmoi init`（重新问）或直接建 `~/.gitconfig.user` 覆盖。
+
+### secrets 加密（可选，chezmoi + age）
+
+想把 SSH config、API token 等私密文件安全放进仓库（加密后再提交）：
+
+```sh
+# 1. 生成 age 密钥（私钥留本地，不进仓库）
+age-keygen -o ~/.config/chezmoi/key.txt
+
+# 2. 在 ~/.config/chezmoi/chezmoi.toml 里启用 age
+#    [age]
+#      identity = "~/.config/chezmoi/key.txt"
+#      recipient = "age1......"   # 上一步输出的 public key
+#    encryption = "age"
+
+# 3. 加密纳管一个私密文件
+chezmoi add --encrypt ~/.ssh/config
+
+# 4. 新机器上把 key.txt 手动拷过去（唯一需要手动传的东西），其余 chezmoi 自动解密
+```
+
+> 私钥 `key.txt` 是唯一不能进仓库的东西，用你信任的渠道（如密码管理器）在机器间传递。
+
+### CI（GitHub Actions）
+
+`.github/workflows/ci.yml` 在每次 push 自动：渲染安装脚本并 `bash -n`、`shellcheck`、
+`zsh -n` 校验所有 zsh 模块、`chezmoi init` 冒烟测试。**避免推了才发现脚本崩**。
 
 ---
 

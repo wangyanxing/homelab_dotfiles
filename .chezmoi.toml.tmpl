@@ -1,6 +1,12 @@
+{{- /* Prompted once on `chezmoi init`; answers stored in the local config. */ -}}
 {{- $editor := "nvim" -}}
+{{- $name := promptStringOnce . "name" "Git user name" -}}
+{{- $email := promptStringOnce . "email" "Git email" -}}
+
 [edit]
     command = "nvim"
 
 [data]
     editor = {{ $editor | quote }}
+    name = {{ $name | quote }}
+    email = {{ $email | quote }}

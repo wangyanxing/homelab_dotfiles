@@ -46,33 +46,19 @@ elif [[ -x /usr/local/bin/brew ]]; then
   eval "$(/usr/local/bin/brew shellenv)"         # Intel
 fi
 
-brew_pkgs=(
-  starship zoxide fzf eza bat fd ripgrep git-delta atuin
-  zellij neovim mise antidote tmux
-  # modern extras
-  lazygit jq yq dust duf procs btop gh tealdeer lazydocker glow httpie
-)
-for pkg in "${brew_pkgs[@]}"; do
-  if brew list --formula "$pkg" >/dev/null 2>&1; then
-    echo "    ok   $pkg"
-  else
-    echo "    install $pkg"
-    brew install "$pkg"
-  fi
-done
+# Install everything from the Brewfile (single source of truth).
+# Read directly from the chezmoi source dir (Brewfile may not be applied yet).
+brewfile="{{ .chezmoi.sourceDir }}/dot_config/homebrew/Brewfile"
+if [[ -f "$brewfile" ]]; then
+  echo ">>> brew bundle (from Brewfile) ..."
+  brew bundle --file="$brewfile" || echo "    !! some brew items failed; continuing"
+else
+  echo "    !! Brewfile not found at $brewfile, skipping brew bundle"
+fi
 
 # Fix Homebrew completion dir perms so zsh's compinit doesn't warn about
 # "insecure directories" on first launch.
 chmod -R go-w "$(brew --prefix)/share/zsh" 2>/dev/null || true
-
-# Nerd Font (JetBrainsMono) so starship's git symbols / status dots render.
-# Matches the font referenced in ~/.config/ghostty/config.
-if brew list --cask font-jetbrains-mono-nerd-font >/dev/null 2>&1; then
-  echo "    ok   font-jetbrains-mono-nerd-font"
-else
-  echo "    install font-jetbrains-mono-nerd-font"
-  brew install --cask font-jetbrains-mono-nerd-font
-fi
 
 {{ else if eq .chezmoi.os "linux" -}}
 # ============================ Linux (NO Homebrew) ============================

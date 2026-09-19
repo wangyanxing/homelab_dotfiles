@@ -1,0 +1,50 @@
+# Brewfile - macOS package manifest, applied via `brew bundle`.
+# Edit here to add/remove tools; then re-run the installer
+# (chezmoi state delete-bucket --bucket=scriptState && chezmoi apply)
+# or simply: brew bundle --file=~/.config/homebrew/Brewfile
+
+# --- shell / prompt ---
+brew "starship"
+brew "antidote"
+brew "zsh"
+
+# --- navigation & search ---
+brew "zoxide"
+brew "fzf"
+brew "eza"
+brew "bat"
+brew "fd"
+brew "ripgrep"
+brew "atuin"
+
+# --- git ---
+brew "git-delta"
+brew "lazygit"
+brew "gh"
+
+# --- editor / multiplexer ---
+brew "neovim"
+brew "zellij"
+brew "tmux"
+
+# --- runtime version manager ---
+brew "mise"
+
+# --- data / http ---
+brew "jq"
+brew "yq"
+brew "httpie"
+
+# --- system / disk / process ---
+brew "dust"
+brew "duf"
+brew "procs"
+brew "btop"
+
+# --- docs / misc ---
+brew "tealdeer"   # provides `tldr`
+brew "lazydocker"
+brew "glow"
+
+# --- fonts ---
+cask "font-jetbrains-mono-nerd-font"

@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# dotfiles-doctor - health check for this dotfiles setup.
+# Verifies that expected tools, symlinks and configs are in place.
+# Usage: dotfiles-doctor
+set -uo pipefail
+
+ok=0; warn=0; miss=0
+green="\033[32m"; yellow="\033[33m"; red="\033[31m"; dim="\033[2m"; rst="\033[0m"
+
+section() { printf "\n${dim}== %s ==${rst}\n" "$1"; }
+check_cmd() {
+  local name="$1" why="${2:-}"
+  if command -v "$name" >/dev/null 2>&1; then
+    printf "  ${green}ok${rst}   %-12s ${dim}%s${rst}\n" "$name" "$(command -v "$name")"
+    ok=$((ok+1))
+  else
+    printf "  ${red}MISS${rst} %-12s ${dim}%s${rst}\n" "$name" "$why"
+    miss=$((miss+1))
+  fi
+}
+check_file() {
+  local f="$1"
+  if [[ -e "${f/#\~/$HOME}" ]]; then
+    printf "  ${green}ok${rst}   %s\n" "$f"; ok=$((ok+1))
+  else
+    printf "  ${yellow}warn${rst} %s ${dim}(missing)${rst}\n" "$f"; warn=$((warn+1))
+  fi
+}
+
+echo "dotfiles-doctor - checking your environment"
+
+section "core"
+check_cmd zsh
+check_cmd git
+check_cmd chezmoi "install: sh -c \"\$(curl -fsLS get.chezmoi.io)\" -- -b ~/.local/bin"
+check_cmd starship
+check_cmd zoxide
+check_cmd fzf
+check_cmd nvim
+
+section "modern CLI"
+for t in eza bat fd rg delta atuin mise zellij tmux; do check_cmd "$t"; done
+
+section "extras"
+for t in lazygit lazydocker jq yq dust duf procs btop gh tldr glow http; do check_cmd "$t"; done
+
+section "config files"
+check_file "~/.zshrc"
+check_file "~/.zshenv"
+check_file "~/.gitconfig"
+check_file "~/.config/starship.toml"
+check_file "~/.config/zsh/aliases.zsh"
+check_file "~/.config/nvim/init.lua"
+check_file "~/.zsh_plugins.txt"
+
+section "shell & path"
+[[ "$SHELL" == *zsh ]] && printf "  ${green}ok${rst}   default shell is zsh\n" || printf "  ${yellow}warn${rst} default shell is '$SHELL' (run: chsh -s \$(command -v zsh))\n"
+case ":$PATH:" in *":$HOME/.local/bin:"*) printf "  ${green}ok${rst}   ~/.local/bin on PATH\n";; *) printf "  ${yellow}warn${rst} ~/.local/bin NOT on PATH\n";; esac
+
+section "git identity"
+name="$(git config --get user.name 2>/dev/null || true)"
+email="$(git config --get user.email 2>/dev/null || true)"
+[[ -n "$name" ]] && printf "  ${green}ok${rst}   user.name  = %s\n" "$name" || printf "  ${yellow}warn${rst} git user.name not set\n"
+[[ -n "$email" ]] && printf "  ${green}ok${rst}   user.email = %s\n" "$email" || printf "  ${yellow}warn${rst} git user.email not set\n"
+
+printf "\n${green}%d ok${rst}, ${yellow}%d warn${rst}, ${red}%d missing${rst}\n" "$ok" "$warn" "$miss"
+[[ "$miss" -eq 0 ]] || echo "Tip: re-run installer -> chezmoi state delete-bucket --bucket=scriptState && chezmoi apply"
