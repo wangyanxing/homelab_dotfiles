@@ -1,6 +1,5 @@
 # Brewfile - macOS package manifest, applied via `brew bundle`.
-# Edit here to add/remove tools; then re-run the installer
-# (chezmoi state delete-bucket --bucket=scriptState && chezmoi apply)
+# Edit here to add/remove tools; then re-run the installer with `dotfiles-install`
 # or simply: brew bundle --file=~/.config/homebrew/Brewfile
 
 # --- shell / prompt ---
@@ -45,6 +44,9 @@ brew "btop"
 brew "tealdeer"   # provides `tldr`
 brew "lazydocker"
 brew "glow"
+
+# --- secrets (chezmoi + age encryption) ---
+brew "age"        # encrypt/decrypt secrets managed by chezmoi
 
 # --- fonts ---
 cask "font-jetbrains-mono-nerd-font"

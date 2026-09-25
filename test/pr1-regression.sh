@@ -14,6 +14,12 @@
 #    7. a standalone re-install command (dotfiles-install) exists.
 #    8. experimental (unverified) install paths are labelled as such.
 #
+#  Features — guards the day-to-day feature additions:
+#    9.  secrets: age encryption auto-enables (guarded) only with a key + tool.
+#    10. dotfiles-update: pull --rebase -> diff preview -> apply.
+#    11. doctor: config-drift + secrets/age status sections.
+#    12. age is a declared dependency (Brewfile + Linux installer).
+#
 #  Static checks only. Does NOT run the installer or touch the network.
 #  Run from the repo root:  ./test/pr1-regression.sh
 # ============================================================================
@@ -76,6 +82,25 @@ if [[ -f "$install_cmd" ]]; then pass "dotfiles-install command present"; else f
 assert_present "re-install doesn't wipe scriptState" 'without touching'      "$install_cmd"
 # doctor's hint points at the standalone command, not a state-bucket wipe
 assert_absent  "doctor no longer suggests wiping state" 'delete-bucket'      "$root/dot_local/bin/executable_dotfiles-doctor"
+
+# --- features: secrets closure, update command, drift detection, mise -------
+toml="$root/.chezmoi.toml.tmpl"
+doctor="$root/dot_local/bin/executable_dotfiles-doctor"
+update_cmd="$root/dot_local/bin/executable_dotfiles-update"
+
+# secrets: age auto-enabled ONLY when key present + tool on PATH (guarded)
+assert_present "age auto-enable is guarded by lookPath" 'lookPath "age-keygen"' "$toml"
+assert_present "age recipient derived from key"         'age-keygen" "-y"'       "$toml"
+# dotfiles-update: pull --rebase, preview, apply
+if [[ -f "$update_cmd" ]]; then pass "dotfiles-update command present"; else fail "dotfiles-update command present"; fi
+assert_present "update pulls with rebase"  'git pull -- --rebase'  "$update_cmd"
+assert_present "update previews via diff"  'chezmoi diff'          "$update_cmd"
+# doctor: drift + secrets sections
+assert_present "doctor checks config drift" 'chezmoi status'       "$doctor"
+assert_present "doctor reports secrets/age" 'secrets \(age\)'      "$doctor"
+# age is a declared dependency (macOS Brewfile + Linux installer)
+assert_present "Brewfile declares age"      'brew "age"'           "$root/dot_config/homebrew/Brewfile"
+assert_present "installer installs age"     'FiloSottile/age'      "$installer"
 
 # --- zsh syntax parse for every module + entrypoint -------------------------
 if command -v zsh >/dev/null 2>&1; then

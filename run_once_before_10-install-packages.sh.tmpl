@@ -229,6 +229,30 @@ gh_install duf        muesli/duf               "linux_${arch}.tar.gz$"
 gh_install procs      dalance/procs            "${arch}-linux.zip$"
 gh_install glow       charmbracelet/glow       "Linux_${arch}.tar.gz$"
 
+# age + age-keygen (secrets encryption for chezmoi) -- optional. One tarball
+# ships both binaries, so extract once instead of two gh_install downloads.
+if ! command -v age-keygen >/dev/null 2>&1; then
+  echo "    install age (secrets)"
+  age_arch="${arch/x86_64/amd64}"; age_arch="${age_arch/aarch64/arm64}"
+  age_url=$(curl -fsSL "https://api.github.com/repos/FiloSottile/age/releases/latest" 2>/dev/null \
+            | grep -oE '"browser_download_url": *"[^"]+"' | cut -d'"' -f4 \
+            | grep -E "linux-${age_arch}.tar.gz$" | head -1)
+  if [[ -n "$age_url" ]]; then
+    age_tmp="$(mktemp -d)"
+    if curl -fsSL "$age_url" -o "$age_tmp/age.tar.gz" && tar -xzf "$age_tmp/age.tar.gz" -C "$age_tmp" 2>/dev/null; then
+      for b in age age-keygen; do
+        f="$(find "$age_tmp" -type f -name "$b" | head -1)"
+        [[ -n "$f" ]] && install -m755 "$f" "$HOME/.local/bin/$b" && echo "    done $b"
+      done
+    else
+      echo "    !! optional age failed, skipping"
+    fi
+    rm -rf "$age_tmp"
+  else
+    echo "    !! no age asset (linux-${age_arch}), skip"
+  fi
+fi
+
 # yq (single raw binary asset, not a tarball) -- optional
 if ! command -v yq >/dev/null 2>&1; then
   echo "    install yq"
@@ -283,7 +307,7 @@ fi
 set -e
 
 req_tools=(starship zoxide eza delta zellij atuin mise nvim)
-opt_tools=(lazygit lazydocker dust duf procs glow yq gh tldr)
+opt_tools=(lazygit lazydocker dust duf procs glow yq gh tldr age-keygen)
 
 echo ">>> [dotfiles] install summary"
 echo "    required:"

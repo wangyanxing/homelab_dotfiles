@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# dotfiles-update - pull the latest dotfiles and apply them, with a preview.
+#
+# Wraps the multi-step multi-machine sync into one safe command:
+#   1. pull the repo with --rebase (chezmoi git pull -- --rebase)
+#   2. show what apply WOULD change (chezmoi diff)
+#   3. apply after you confirm  (skip the prompt with -y / --yes)
+#
+# Usage:
+#   dotfiles-update        # interactive: pull, preview diff, confirm, apply
+#   dotfiles-update -y     # non-interactive: pull and apply without prompting
+set -uo pipefail
+
+yes=0
+case "${1:-}" in
+  -y|--yes) yes=1 ;;
+  "") ;;
+  *) echo "usage: dotfiles-update [-y|--yes]" >&2; exit 2 ;;
+esac
+
+if ! command -v chezmoi >/dev/null 2>&1; then
+  echo "dotfiles-update: chezmoi not on PATH." >&2
+  echo "  install: sh -c \"\$(curl -fsLS get.chezmoi.io)\" -- -b ~/.local/bin" >&2
+  exit 1
+fi
+
+echo ">>> pulling latest dotfiles (rebase) ..."
+if ! chezmoi git pull -- --rebase --autostash; then
+  echo "dotfiles-update: git pull failed." >&2
+  echo "  resolve conflicts in your source dir (chezmoi cd), then re-run." >&2
+  exit 1
+fi
+
+echo ">>> changes that apply would make:"
+if chezmoi diff --exit-code >/dev/null 2>&1; then
+  echo "    (nothing to apply — already up to date)"
+  exit 0
+fi
+chezmoi diff
+
+if [[ "$yes" -ne 1 ]]; then
+  printf ">>> apply these changes? [y/N] "
+  read -r reply
+  case "$reply" in
+    y|Y|yes|YES) ;;
+    *) echo "    aborted (nothing applied)."; exit 0 ;;
+  esac
+fi
+
+echo ">>> applying ..."
+chezmoi apply
+echo ">>> done. Open a new shell (or: exec zsh) to pick up changes."

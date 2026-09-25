@@ -36,6 +36,11 @@ jobs:
           shellcheck -S warning -e SC1090,SC1091,SC2296,SC2298 /tmp/install.sh
           # Regression test harness must also be clean.
           shellcheck -S warning test/pr1-regression.sh
+          # Helper commands in ~/.local/bin (doctor uses literal ~ for display
+          # only — it expands via ${f/#\~/$HOME} — so SC2088 is intentional).
+          shellcheck -S warning dot_local/bin/executable_dotfiles-install
+          shellcheck -S warning dot_local/bin/executable_dotfiles-update
+          shellcheck -S warning -e SC2088 dot_local/bin/executable_dotfiles-doctor
 
       - name: zsh parse check
         run: |

@@ -111,5 +111,34 @@ else
   printf "  ${yellow}warn${rst} no ssh key ${dim}(ssh-keygen -t ed25519, then add to github)${rst}\n"
 fi
 
+section "config drift"
+# Detect files you edited directly in $HOME that haven't been written back to
+# the chezmoi source repo — those get reverted on the next `chezmoi apply`.
+if command -v chezmoi >/dev/null 2>&1; then
+  drift="$(chezmoi status 2>/dev/null)"
+  if [[ -z "$drift" ]]; then
+    printf "  ${green}ok${rst}   no drift ${dim}(\$HOME matches the repo)${rst}\n"; ok=$((ok+1))
+  else
+    printf "  ${yellow}warn${rst} local edits not in repo ${dim}(chezmoi diff / re-add via chezmoi add)${rst}\n"; warn=$((warn+1))
+    echo "$drift" | sed 's/^/       /'
+  fi
+else
+  printf "  ${yellow}warn${rst} chezmoi not on PATH; can't check drift\n"; warn=$((warn+1))
+fi
+
+section "secrets (age)"
+# age encryption is optional; only flag a broken half-setup (key without tool
+# or vice-versa). No key at all is fine — just informational.
+key="$HOME/.config/chezmoi/key.txt"
+if [[ -f "$key" ]] && command -v age-keygen >/dev/null 2>&1; then
+  printf "  ${green}ok${rst}   age key + tools present ${dim}(encrypted secrets ready)${rst}\n"; ok=$((ok+1))
+elif [[ -f "$key" ]]; then
+  printf "  ${yellow}warn${rst} age key present but age-keygen missing ${dim}(install age)${rst}\n"; warn=$((warn+1))
+elif command -v age-keygen >/dev/null 2>&1; then
+  printf "  ${dim}--   age installed, no key yet (secrets optional; see README)${rst}\n"
+else
+  printf "  ${dim}--   age not configured (secrets optional; see README)${rst}\n"
+fi
+
 printf "\n${green}%d ok${rst}, ${yellow}%d warn${rst}, ${red}%d missing${rst}\n" "$ok" "$warn" "$miss"
 [[ "$miss" -eq 0 ]] || echo "Tip: fill in missing tools with -> dotfiles-install"

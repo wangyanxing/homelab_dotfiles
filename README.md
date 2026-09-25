@@ -485,12 +485,22 @@ zellij attach     # 接回上一个会话（detach 后恢复）
 
 ## 常见操作速查
 
+日常用这三个封装命令（都在 `~/.local/bin`）：
+
+```sh
+dotfiles-update            # 多机同步：pull --rebase → 预览 diff → 确认后 apply（-y 跳过确认）
+dotfiles-install           # 补装缺失/失败的工具，不动 chezmoi scriptState
+dotfiles-doctor            # 健康自检：工具、配置文件、配置漂移、secrets、git 身份
+```
+
+底层的原生命令（需要更细粒度时）：
+
 ```sh
 chezmoi edit ~/.zshrc      # 编辑（自动定位到 source 文件）
 chezmoi apply              # 把 source 的改动同步到 $HOME
 chezmoi diff               # 预览将要发生的改动
+chezmoi status             # 列出 $HOME 里偏离仓库的文件（配置漂移）
 chezmoi cd                 # 进入 source 仓库目录
-chezmoi update             # git pull + apply（多机同步）
 chezmoi managed            # 列出所有被管理的文件
 chezmoi add ~/.foorc       # 把一个新文件纳入管理
 ```
@@ -536,27 +546,52 @@ dotfiles-install   # 只渲染并重跑安装脚本，不动 chezmoi scriptState
 `chezmoi init` 时会**交互式询问一次** git 用户名和邮箱，存入 chezmoi data，
 自动写进 `~/.gitconfig`。想改：`chezmoi init`（重新问）或直接建 `~/.gitconfig.user` 覆盖。
 
-### secrets 加密（可选，chezmoi + age）
+### 每项目运行时版本（mise）
 
-想把 SSH config、API token 等私密文件安全放进仓库（加密后再提交）：
+全局默认版本在 `dot_config/mise/config.toml`（node=lts、python=latest），
+**刻意不在 prompt 显示版本号**。某个项目要钉死版本时，在项目根目录放一个 `.mise.toml`：
+
+```toml
+# <project>/.mise.toml — 进入该目录时 mise 自动切到这些版本
+[tools]
+node = "20.11.0"
+python = "3.11"
+# "npm:pnpm" = "9"
+```
 
 ```sh
-# 1. 生成 age 密钥（私钥留本地，不进仓库）
+mise install        # 按当前目录的 .mise.toml / 全局 config 装齐版本
+mise use node@20    # 在当前项目写入 .mise.toml 并切换
+mise ls             # 看已装/当前生效的版本
+```
+
+> 默认 `not_found_auto_install = false`（`config.toml` 里）——进入带 `.mise.toml` 的目录
+> 不会偷偷下载；想完全免手动，改成 `true`。
+
+### secrets 加密（可选，chezmoi + age）
+
+想把 SSH config、API token 等私密文件安全放进仓库（加密后再提交）。
+**加密是自动启用的**：只要 `~/.config/chezmoi/key.txt` 存在且装了 `age`，
+`.chezmoi.toml.tmpl` 会自动配好 age（recipient 从私钥推导），无需手动编辑 chezmoi.toml。
+
+```sh
+# 1. 装 age（macOS 已在 Brewfile；Linux 安装脚本会拉 age + age-keygen）
+#    没装的话：brew install age   /   dotfiles-install
+
+# 2. 生成 age 密钥（私钥留本地，绝不进仓库）
 age-keygen -o ~/.config/chezmoi/key.txt
 
-# 2. 在 ~/.config/chezmoi/chezmoi.toml 里启用 age
-#    [age]
-#      identity = "~/.config/chezmoi/key.txt"
-#      recipient = "age1......"   # 上一步输出的 public key
-#    encryption = "age"
+# 3. 重新 init 让 age 配置生效（会自动检测到 key）
+chezmoi init
 
-# 3. 加密纳管一个私密文件
+# 4. 加密纳管一个私密文件
 chezmoi add --encrypt ~/.ssh/config
 
-# 4. 新机器上把 key.txt 手动拷过去（唯一需要手动传的东西），其余 chezmoi 自动解密
+# 5. 新机器上把 key.txt 手动拷过去（唯一需要手动传的东西），其余 chezmoi 自动解密
 ```
 
 > 私钥 `key.txt` 是唯一不能进仓库的东西，用你信任的渠道（如密码管理器）在机器间传递。
+> `dotfiles-doctor` 会检查 age 密钥与工具是否配套。
 
 ### CI（GitHub Actions）
 
