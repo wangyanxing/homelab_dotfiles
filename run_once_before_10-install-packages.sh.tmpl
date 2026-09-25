@@ -2,6 +2,15 @@
 # Cross-platform package installer for a fresh machine.
 # Runs once (chezmoi tracks its hash). Installs the modern CLI stack that this
 # dotfiles setup depends on. Safe to re-run: package managers skip installed pkgs.
+#
+# Supported / verified paths:
+#   * macOS with Homebrew (Brewfile)          <- primary, verified
+#   * Linux with apt + GitHub-release binaries <- verified on Ubuntu
+# Experimental (best-effort, NOT a one-command reproduce):
+#   * macOS WITHOUT admin/Homebrew (GitHub-release binaries into ~/.local/bin)
+#
+# To retry after a failed download without wiping chezmoi's script state, run:
+#   dotfiles-install
 set -euo pipefail
 
 echo ">>> [dotfiles] bootstrapping packages ..."
@@ -80,9 +89,15 @@ fi
 # If brew still isn't available (no admin rights, install cancelled, or no TTY),
 # don't hard-fail: fall back to pulling static binaries from GitHub releases
 # into ~/.local/bin (same approach as the Linux branch, no admin needed).
+#
+# EXPERIMENTAL: this no-Homebrew path is a best-effort convenience, NOT a
+# verified "one-command reproduce" flow. Asset name patterns, arch handling
+# (arm64 vs x86_64) and the eza-less fallback are only lightly tested. The
+# supported/verified path on macOS is Homebrew + Brewfile. Prefer installing
+# Homebrew when you can.
 if ! command -v brew >/dev/null 2>&1; then
-  echo ">>> Homebrew unavailable; falling back to GitHub-release binaries in ~/.local/bin ..."
-  echo "    (needs no admin rights; run brew later for a fuller setup — see README)"
+  echo ">>> [EXPERIMENTAL] Homebrew unavailable; falling back to GitHub-release binaries in ~/.local/bin ..."
+  echo "    (needs no admin rights; this path is best-effort — install brew later for the verified setup)"
   mkdir -p "$HOME/.local/bin"
   export PATH="$HOME/.local/bin:$PATH"
 
@@ -260,13 +275,30 @@ if [[ ! -d "$HOME/.antidote" ]]; then
 fi
 [[ -d "$HOME/.antidote" ]] || { echo "    !! REQUIRED antidote missing"; failed_required+=("antidote"); }
 
-# --- fail loud if any REQUIRED tool didn't install --------------------------
+# --- install summary + fail loud on missing REQUIRED tools ------------------
+# Print a full inventory (what's present, what's missing) so a failed download
+# is obvious at a glance, then exit non-zero if any REQUIRED tool is missing.
 # Non-zero exit -> chezmoi won't record this run_once as done, so a later
-# `chezmoi apply` (after fixing network/rate limits) retries the whole thing.
+# `chezmoi apply` (or `dotfiles-install`) retries the whole thing.
 set -e
+
+req_tools=(starship zoxide eza delta zellij atuin mise nvim)
+opt_tools=(lazygit lazydocker dust duf procs glow yq gh tldr)
+
+echo ">>> [dotfiles] install summary"
+echo "    required:"
+for t in "${req_tools[@]}"; do
+  command -v "$t" >/dev/null 2>&1 && echo "      ok      $t" || echo "      MISSING $t"
+done
+[[ -d "$HOME/.antidote" ]] && echo "      ok      antidote" || echo "      MISSING antidote"
+echo "    optional:"
+for t in "${opt_tools[@]}"; do
+  command -v "$t" >/dev/null 2>&1 && echo "      ok      $t" || echo "      skipped $t"
+done
+
 if [[ ${#failed_required[@]} -gt 0 ]]; then
   echo ">>> [dotfiles] ERROR: required tools failed to install: ${failed_required[*]}" >&2
-  echo ">>> re-run with:  chezmoi apply   (after fixing the cause)" >&2
+  echo ">>> fix the cause (network / rate limit), then re-run:  dotfiles-install" >&2
   exit 1
 fi
 {{ end -}}

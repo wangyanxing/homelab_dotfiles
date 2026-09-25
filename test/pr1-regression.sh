@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 # ============================================================================
-#  PR1 regression tests — Shell safety, chezmoi edit entry, plugin cache.
+#  Reliability regression tests — PR1 (shell safety) + PR2 (trustworthy install)
 #
-#  Guards the four PR1 fixes so they can't silently regress:
+#  PR1 — guards the four shell fixes so they can't silently regress:
 #    1. Ctrl-x Ctrl-l history re-exec binding is gone.
 #    2. `gar` process-wide SIGHUP broadcast (and TRAPHUP) is gone.
 #    3. `ae` edits the chezmoi SOURCE file (chezmoi edit), not the deployed copy.
 #    4. plugin cache: atomic write (temp + mv) and a guarded, degradable start.
+#
+#  PR2 — guards the installer trust improvements:
+#    5. installer prints a required/optional inventory summary.
+#    6. required-tool failure exits non-zero (chezmoi retries).
+#    7. a standalone re-install command (dotfiles-install) exists.
+#    8. experimental (unverified) install paths are labelled as such.
 #
 #  Static checks only. Does NOT run the installer or touch the network.
 #  Run from the repo root:  ./test/pr1-regression.sh
@@ -31,7 +37,7 @@ assert_present() {
   if grep -Eq "$2" "$3"; then pass "$1"; else fail "$1"; fi
 }
 
-echo ">>> PR1 regression checks"
+echo ">>> reliability regression checks"
 
 # --- 1. Ctrl-x Ctrl-l history re-exec binding removed -----------------------
 assert_absent "no ^X^L keybinding"            '\^X\^L'                  "$zdir/functions.zsh"
@@ -57,6 +63,20 @@ assert_absent  "no direct bundle > live cache"    'bundle[^\n]*>[^\n]*zsh_plugin
 # degradable start: antidote missing must not hard-fail
 assert_present "guarded start when antidote missing" 'antidote unavailable' "$zdir/plugins.zsh"
 
+# --- PR2: trustworthy installer ---------------------------------------------
+installer="$root/run_once_before_10-install-packages.sh.tmpl"
+install_cmd="$root/dot_local/bin/executable_dotfiles-install"
+
+assert_present "installer prints a summary"        'install summary'        "$installer"
+assert_present "installer tracks required failures" 'failed_required'        "$installer"
+assert_present "required failure exits non-zero"    'exit 1'                 "$installer"
+assert_present "experimental path is labelled"      'EXPERIMENTAL'           "$installer"
+# standalone re-install command exists and avoids nuking chezmoi script state
+if [[ -f "$install_cmd" ]]; then pass "dotfiles-install command present"; else fail "dotfiles-install command present"; fi
+assert_present "re-install doesn't wipe scriptState" 'without touching'      "$install_cmd"
+# doctor's hint points at the standalone command, not a state-bucket wipe
+assert_absent  "doctor no longer suggests wiping state" 'delete-bucket'      "$root/dot_local/bin/executable_dotfiles-doctor"
+
 # --- zsh syntax parse for every module + entrypoint -------------------------
 if command -v zsh >/dev/null 2>&1; then
   for f in "$zdir"/*.zsh "$root/dot_zshrc"; do
@@ -68,7 +88,7 @@ fi
 
 echo ">>> ---"
 if [[ $fails -gt 0 ]]; then
-  echo ">>> PR1 regression: $fails check(s) FAILED" >&2
+  echo ">>> regression: $fails check(s) FAILED" >&2
   exit 1
 fi
-echo ">>> PR1 regression: all checks passed"
+echo ">>> regression: all checks passed"

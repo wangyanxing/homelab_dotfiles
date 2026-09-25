@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# dotfiles-install - (re)run the package installer on demand.
+#
+# Why this exists: the installer is a chezmoi `run_once_` script, so chezmoi
+# only re-runs it when its contents change. If a download failed (rate limit,
+# offline) you'd otherwise have to wipe ALL script state to retry. This command
+# renders and runs JUST the installer, without touching chezmoi's scriptState.
+# The installer is idempotent — already-present tools are skipped — so it's
+# safe to run repeatedly to fill in whatever is still missing.
+#
+# Usage: dotfiles-install
+set -uo pipefail
+
+if ! command -v chezmoi >/dev/null 2>&1; then
+  echo "dotfiles-install: chezmoi not on PATH." >&2
+  echo "  install: sh -c \"\$(curl -fsLS get.chezmoi.io)\" -- -b ~/.local/bin" >&2
+  exit 1
+fi
+
+src="$(chezmoi source-path 2>/dev/null)"
+tmpl="$src/run_once_before_10-install-packages.sh.tmpl"
+if [[ ! -f "$tmpl" ]]; then
+  echo "dotfiles-install: installer template not found at $tmpl" >&2
+  exit 1
+fi
+
+echo ">>> dotfiles-install: rendering installer for this machine ..."
+rendered="$(mktemp)"
+trap 'rm -f "$rendered"' EXIT
+if ! chezmoi execute-template < "$tmpl" > "$rendered"; then
+  echo "dotfiles-install: failed to render installer template" >&2
+  exit 1
+fi
+
+bash "$rendered"

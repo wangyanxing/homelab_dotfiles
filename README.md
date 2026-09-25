@@ -514,7 +514,22 @@ chezmoi add ~/.foorc       # 把一个新文件纳入管理
 ```sh
 dotfiles-doctor    # 检查所有工具是否就位、配置文件、默认 shell、PATH、git 身份
 ```
-输出 `ok / warn / missing` 汇总，缺东西会提示如何补装。
+输出 `ok / warn / missing` 汇总。缺东西时提示用 `dotfiles-install` 补装。
+
+### 补装缺失的工具：dotfiles-install
+
+安装脚本是 chezmoi 的 `run_once_`，只在**内容变化**时才重跑。若某次下载因限流/离线失败，
+不必清空所有 chezmoi 脚本状态——直接跑补装命令即可（脚本幂等，已装的会跳过）：
+
+```sh
+dotfiles-install   # 只渲染并重跑安装脚本，不动 chezmoi scriptState
+```
+
+安装脚本结尾会打印一份**总账**（required / optional 各自 ok / missing / skipped），
+必需项缺失会让脚本非零退出，网络恢复后再跑一次 `dotfiles-install` 补齐即可。
+
+> **平台支持**：macOS + Homebrew（Brewfile）和 Ubuntu（apt + GitHub 二进制）是**已验证**路径；
+> macOS 无 admin/无 Homebrew 的 `~/.local/bin` 降级路径标记为**实验性**（best-effort，不承诺一键复现）。
 
 ### git 身份
 

@@ -51,6 +51,7 @@ section "core"
 check_cmd zsh
 check_cmd git
 check_cmd chezmoi "install: sh -c \"\$(curl -fsLS get.chezmoi.io)\" -- -b ~/.local/bin"
+check_opt dotfiles-install "helper to re-run the installer (ships in ~/.local/bin)"
 check_cmd starship
 check_cmd zoxide
 check_cmd fzf
@@ -111,4 +112,4 @@ else
 fi
 
 printf "\n${green}%d ok${rst}, ${yellow}%d warn${rst}, ${red}%d missing${rst}\n" "$ok" "$warn" "$miss"
-[[ "$miss" -eq 0 ]] || echo "Tip: re-run installer -> chezmoi state delete-bucket --bucket=scriptState && chezmoi apply"
+[[ "$miss" -eq 0 ]] || echo "Tip: fill in missing tools with -> dotfiles-install"
