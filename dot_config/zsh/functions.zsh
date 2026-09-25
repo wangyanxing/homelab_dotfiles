@@ -2,13 +2,6 @@
 #  functions.zsh - shell functions & keybindings (ported from YADR).
 # ============================================================================
 
-# --- alias hot-reload (YADR: SIGHUP re-sources aliases) ---------------------
-# `gar` sends HUP to all your zsh sessions; each one re-loads aliases live.
-TRAPHUP() {
-  source "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/aliases.zsh"
-  source "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/git.zsh"
-}
-
 # --- (f)ind by (n)ame -------------------------------------------------------
 # usage: fn foo   -> all files with 'foo' in the name (recursive)
 fn() {
@@ -43,15 +36,7 @@ extract() {
 }
 
 # --- keybindings ------------------------------------------------------------
-# emacs-style line editing (default), plus YADR's Ctrl-x Ctrl-l:
-# insert the OUTPUT of the previously run command onto the line.
-zmodload -i zsh/parameter
-insert-last-command-output() {
-  LBUFFER+="$(eval $history[$((HISTCMD-1))])"
-}
-zle -N insert-last-command-output
-bindkey '^X^L' insert-last-command-output
-
+# emacs-style line editing (default).
 bindkey '^a' beginning-of-line
 bindkey '^e' end-of-line
 bindkey '^r' history-incremental-search-backward

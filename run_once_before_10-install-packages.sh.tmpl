@@ -167,7 +167,9 @@ export PATH="$HOME/.local/bin:$PATH"
 
 arch="$(uname -m)"   # x86_64 or aarch64
 
-# --- base packages via apt --------------------------------------------------
+# --- base packages via apt (REQUIRED) ---------------------------------------
+# apt base packages are required; if apt itself fails the machine is unusable
+# for the rest of the bootstrap, so let errexit abort here.
 if command -v apt-get >/dev/null 2>&1; then
   echo ">>> installing base packages via apt ..."
   sudo apt-get update -y
@@ -180,18 +182,30 @@ if command -v apt-get >/dev/null 2>&1; then
   command -v fdfind >/dev/null 2>&1 && ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
 fi
 
-# --- from here on, individual tool failures must NOT abort the whole bootstrap
+# --- track required-tool failures -------------------------------------------
+# Individual tool installs below run with errexit OFF (gh_install never aborts).
+# But REQUIRED tools that end up missing are collected and, at the very end,
+# cause a non-zero exit so chezmoi does NOT mark this run_once script as done
+# -> the next `chezmoi apply` retries (e.g. after the network is back).
+# Optional tools are best-effort: a failure only prints a note.
+failed_required=()
 set +e
 
-# --- modern CLI tools (static binaries; gh_install defined at top of script) -
-gh_install starship starship/starship "${arch}-unknown-linux-gnu.tar.gz$"
-gh_install zoxide   ajeetdsouza/zoxide "${arch}-unknown-linux-musl.tar.gz$"
-gh_install eza      eza-community/eza  "${arch}-unknown-linux-gnu.tar.gz$"
-gh_install delta    dandavison/delta   "${arch}-unknown-linux-gnu.tar.gz$"
-gh_install zellij   zellij-org/zellij  "${arch}-unknown-linux-musl.tar.gz$"
-gh_install atuin    atuinsh/atuin      "atuin-${arch}-unknown-linux-gnu.tar.gz$"
+# require <bin>: record a required tool as failed if its binary is still missing.
+require() {
+  command -v "$1" >/dev/null 2>&1 || { echo "    !! REQUIRED $1 missing"; failed_required+=("$1"); }
+}
 
-# modern extras. lazygit/lazydocker use lowercase 'linux_<arch>' (x86_64/arm64).
+# --- modern CLI tools (REQUIRED: the core shell experience depends on these) -
+gh_install starship starship/starship "${arch}-unknown-linux-gnu.tar.gz$";      require starship
+gh_install zoxide   ajeetdsouza/zoxide "${arch}-unknown-linux-musl.tar.gz$";     require zoxide
+gh_install eza      eza-community/eza  "${arch}-unknown-linux-gnu.tar.gz$";      require eza
+gh_install delta    dandavison/delta   "${arch}-unknown-linux-gnu.tar.gz$";      require delta
+gh_install zellij   zellij-org/zellij  "${arch}-unknown-linux-musl.tar.gz$";     require zellij
+gh_install atuin    atuinsh/atuin      "atuin-${arch}-unknown-linux-gnu.tar.gz$"; require atuin
+
+# --- optional extras (best-effort) ------------------------------------------
+# lazygit/lazydocker use lowercase 'linux_<arch>' (x86_64/arm64).
 lg_arch="${arch/aarch64/arm64}"
 gh_install lazygit    jesseduffield/lazygit    "linux_${lg_arch}.tar.gz$"
 gh_install lazydocker jesseduffield/lazydocker "Linux_${lg_arch}.tar.gz$"
@@ -200,32 +214,33 @@ gh_install duf        muesli/duf               "linux_${arch}.tar.gz$"
 gh_install procs      dalance/procs            "${arch}-linux.zip$"
 gh_install glow       charmbracelet/glow       "Linux_${arch}.tar.gz$"
 
-# yq (single raw binary asset, not a tarball)
+# yq (single raw binary asset, not a tarball) -- optional
 if ! command -v yq >/dev/null 2>&1; then
   echo "    install yq"
   yq_arch="${arch/x86_64/amd64}"; yq_arch="${yq_arch/aarch64/arm64}"
   curl -fsSL "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${yq_arch}" \
-    -o "$HOME/.local/bin/yq" && chmod +x "$HOME/.local/bin/yq"
+    -o "$HOME/.local/bin/yq" && chmod +x "$HOME/.local/bin/yq" || echo "    !! optional yq failed, skipping"
 fi
 
-# gh (GitHub CLI); binary lives in bin/ inside the tarball -> handled by find
+# gh (GitHub CLI); binary lives in bin/ inside the tarball -> handled by find -- optional
 gh_install gh cli/cli "linux_${arch/x86_64/amd64}.tar.gz"
 
-# tealdeer -> provides the `tldr` command (raw binary asset)
+# tealdeer -> provides the `tldr` command (raw binary asset) -- optional
 if ! command -v tldr >/dev/null 2>&1; then
   echo "    install tldr (tealdeer)"
   tldr_arch="${arch/x86_64/x86_64}"; tldr_arch="${tldr_arch/aarch64/aarch64}"
   curl -fsSL "https://github.com/tealdeer-rs/tealdeer/releases/latest/download/tealdeer-linux-${tldr_arch}-musl" \
-    -o "$HOME/.local/bin/tldr" && chmod +x "$HOME/.local/bin/tldr"
+    -o "$HOME/.local/bin/tldr" && chmod +x "$HOME/.local/bin/tldr" || echo "    !! optional tldr failed, skipping"
 fi
 
-# --- mise (official installer -> ~/.local/bin) ------------------------------
+# --- mise (official installer -> ~/.local/bin) : REQUIRED -------------------
 if ! command -v mise >/dev/null 2>&1; then
   echo "    install mise"
-  curl -fsSL https://mise.run | MISE_INSTALL_PATH="$HOME/.local/bin/mise" sh
+  curl -fsSL https://mise.run | MISE_INSTALL_PATH="$HOME/.local/bin/mise" sh || true
 fi
+require mise
 
-# --- neovim (full tarball; apt's version is too old for LazyVim) ------------
+# --- neovim (full tarball; apt's version is too old for LazyVim) : REQUIRED -
 if ! command -v nvim >/dev/null 2>&1; then
   echo "    install neovim"
   nvim_arch="$arch"; [[ "$arch" == "aarch64" ]] && nvim_arch="arm64"
@@ -237,10 +252,22 @@ if ! command -v nvim >/dev/null 2>&1; then
   fi
   rm -rf "$tmp"
 fi
+require nvim
 
-# --- antidote (zsh plugin manager, via git) ---------------------------------
+# --- antidote (zsh plugin manager, via git) : REQUIRED ----------------------
 if [[ ! -d "$HOME/.antidote" ]]; then
-  git clone --depth=1 https://github.com/mattmc3/antidote.git "$HOME/.antidote"
+  git clone --depth=1 https://github.com/mattmc3/antidote.git "$HOME/.antidote" || true
+fi
+[[ -d "$HOME/.antidote" ]] || { echo "    !! REQUIRED antidote missing"; failed_required+=("antidote"); }
+
+# --- fail loud if any REQUIRED tool didn't install --------------------------
+# Non-zero exit -> chezmoi won't record this run_once as done, so a later
+# `chezmoi apply` (after fixing network/rate limits) retries the whole thing.
+set -e
+if [[ ${#failed_required[@]} -gt 0 ]]; then
+  echo ">>> [dotfiles] ERROR: required tools failed to install: ${failed_required[*]}" >&2
+  echo ">>> re-run with:  chezmoi apply   (after fixing the cause)" >&2
+  exit 1
 fi
 {{ end -}}
 

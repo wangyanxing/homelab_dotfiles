@@ -5,3 +5,4 @@
 # editor / OS noise
 .DS_Store
 *.swp
+*.log

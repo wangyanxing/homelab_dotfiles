@@ -83,10 +83,11 @@ if command -v zellij >/dev/null 2>&1; then
 fi
 
 # --- Alias editing (YADR: ae / ar) ------------------------------------------
-# ae = alias edit, ar = alias reload. See functions.zsh for the reload trap.
-alias ae="\${EDITOR:-nvim} ${XDG_CONFIG_HOME:-$HOME/.config}/zsh/aliases.zsh"
+# ae = alias edit (via chezmoi, so changes land in the repo, not just the
+#      deployed copy that `chezmoi apply` would later overwrite).
+# ar = alias reload (re-source into THIS shell only).
+alias ae="chezmoi edit --apply ${XDG_CONFIG_HOME:-$HOME/.config}/zsh/aliases.zsh"
 alias ar="source ${XDG_CONFIG_HOME:-$HOME/.config}/zsh/aliases.zsh"
-alias gar="killall -HUP -u \"\$USER\" zsh"   # global alias reload (all shells)
 
 # --- Editor shortcuts -------------------------------------------------------
 alias :q='exit'

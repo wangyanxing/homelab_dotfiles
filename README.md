@@ -236,7 +236,7 @@ homelab_dotfiles/                              # chezmoi source 目录
 │   │   ├── plugins.zsh                         #   antidote 加载 + 键位绑定
 │   │   ├── aliases.zsh                         #   系统 alias（psg/psx/pk/ll/ar/ae/全局 alias）
 │   │   ├── git.zsh                             #   git alias（gpl/gcm/gl/gs/gco...）
-│   │   ├── functions.zsh                       #   函数（fn/mcd/extract）+ Ctrl-x Ctrl-l
+│   │   ├── functions.zsh                       #   函数（fn/mcd/extract）+ 键位绑定
 │   │   └── tools.zsh                           #   zoxide/fzf/atuin/mise/bat/starship 初始化
 │   ├── nvim/                                   # ~/.config/nvim/  LazyVim
 │   │   ├── init.lua
@@ -291,11 +291,12 @@ homelab_dotfiles/                              # chezmoi source 目录
 | fasd `z` | zoxide `z` | ✅ 等价 |
 | history-substring-search | 同名 zsh 插件 | ✅ 保留 |
 | `.zsh.before` / `.zsh.after` | 同名约定 | ✅ 保留 |
-| `ar` / `ae` 改 alias | 同名函数 | ✅ 保留 |
+| `ar` / `ae` 改 alias | `ar` 保留；`ae` 改为走 `chezmoi edit` | ♻️ 调整 |
 | git alias（gpl/gcm/gl/gs...） | `git.zsh` | ✅ 全保留 |
 | 系统 alias（psg/ll...） | `aliases.zsh` | ✅ 保留 |
 | 全局 alias（`...` `G` `L`） | `aliases.zsh` | ✅ 保留 |
-| Ctrl-x Ctrl-l 插入上条命令输出 | `functions.zsh` | ✅ 保留 |
+| `gar` 广播 SIGHUP 重载 alias | 无（会误伤非交互脚本） | ❌ 移除 |
+| Ctrl-x Ctrl-l 插入上条命令输出 | 无（实为重跑历史命令，有副作用） | ❌ 移除 |
 | 90+ vim 插件 | LazyVim（轻量） | ♻️ 精简 |
 | Ruby/Rails/Zeus/spring alias | 无 | ❌ 移除 |
 
@@ -393,10 +394,11 @@ echo 'alias deploy="..."' > ~/.zsh.after/00-local.zsh
 ### 快速改 alias：ar / ae
 
 ```sh
-ae   # 用编辑器打开 aliases.zsh
+ae   # 用 chezmoi edit 打开 aliases.zsh 源文件并 --apply（改动进仓库，不会被 apply 还原）
 ar   # 重新加载 aliases.zsh（当前 shell 立即生效）
-gar  # 让所有已打开的 zsh 会话都重新加载 alias
 ```
+
+> 只想临时在当前 shell 加个别名，直接写 `~/.zsh.after/00-local.zsh`（机器专属，不进仓库）。
 
 ---
 
@@ -501,7 +503,7 @@ chezmoi add ~/.foorc       # 把一个新文件纳入管理
 - **加 alias**：`ae` 或直接编辑 `dot_config/zsh/aliases.zsh` / `git.zsh`。
 - **加安装的软件**：
   - macOS → 编辑 `dot_config/homebrew/Brewfile`（`brew`/`cask` 一行一个）
-  - Linux → 编辑 `run_once_before_10-install-packages.sh.tmpl`（apt 列表或加一行 `gh_install`）
+  - Linux → 编辑 `run_once_before_10-install-packages.sh.tmpl`（apt 列表或加一行 `gh_install`）。核心工具装完用 `require <bin>` 标记为必需：缺失会让脚本非零退出、下次 `chezmoi apply` 自动重试；不加 `require` 的即为可选，失败只提示、不阻断。
 - **改 prompt**：编辑 `dot_config/starship.toml`。
 - **加 nvim 插件**：在 `dot_config/nvim/lua/plugins/` 下加 `.lua` 文件。
 

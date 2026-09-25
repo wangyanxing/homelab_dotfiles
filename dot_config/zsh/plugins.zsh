@@ -20,9 +20,20 @@ fi
 zsh_plugins_txt="$HOME/.zsh_plugins.txt"
 zsh_plugins_zsh="$HOME/.zsh_plugins.zsh"
 if [[ ! -f "$zsh_plugins_zsh" || "$zsh_plugins_txt" -nt "$zsh_plugins_zsh" ]]; then
-  antidote bundle <"$zsh_plugins_txt" >"$zsh_plugins_zsh"
+  # Write to a temp file first; only replace the real cache on success. A
+  # failed/empty bundle (antidote missing, network error) must NOT clobber a
+  # working cache, and must NOT leave a stale-but-newer empty file that would
+  # make the next startup skip regeneration.
+  zsh_plugins_tmp="$(mktemp "${zsh_plugins_zsh}.XXXXXX")"
+  if antidote bundle <"$zsh_plugins_txt" >"$zsh_plugins_tmp" && [[ -s "$zsh_plugins_tmp" ]]; then
+    mv -f "$zsh_plugins_tmp" "$zsh_plugins_zsh"
+  else
+    echo "plugins.zsh: antidote bundle failed; keeping previous cache" >&2
+    rm -f "$zsh_plugins_tmp"
+  fi
+  unset zsh_plugins_tmp
 fi
-source "$zsh_plugins_zsh"
+[[ -r "$zsh_plugins_zsh" ]] && source "$zsh_plugins_zsh"
 unset zsh_plugins_txt zsh_plugins_zsh
 
 # --- key bindings for history-substring-search ------------------------------
