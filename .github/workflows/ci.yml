@@ -30,7 +30,12 @@ jobs:
       - name: shellcheck
         run: |
           sudo apt-get update -y && sudo apt-get install -y shellcheck
-          shellcheck -S warning -e SC1090,SC1091,SC2296,SC2298 /tmp/install.sh || true
+          # Gate the main line: shellcheck failures now FAIL the build.
+          # Only the explicitly-listed rules are ignored (sourced files /
+          # zsh-specific constructs), everything else must be fixed.
+          shellcheck -S warning -e SC1090,SC1091,SC2296,SC2298 /tmp/install.sh
+          # Regression test harness must also be clean.
+          shellcheck -S warning test/pr1-regression.sh
 
       - name: zsh parse check
         run: |
@@ -38,6 +43,11 @@ jobs:
           for f in dot_config/zsh/*.zsh dot_zshrc; do
             zsh -n "$f" && echo "OK: $f"
           done
+
+      - name: PR1 regression tests
+        run: |
+          sudo apt-get install -y zsh
+          ./test/pr1-regression.sh
 
   verify:
     runs-on: ubuntu-latest
