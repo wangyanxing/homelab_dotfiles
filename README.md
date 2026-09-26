@@ -595,6 +595,23 @@ chezmoi add --encrypt ~/.ssh/config
 > 私钥 `key.txt` 是唯一不能进仓库的东西，用你信任的渠道（如密码管理器）在机器间传递。
 > `dotfiles-doctor` 会检查 age 密钥与工具是否配套。
 
+### Atuin 历史同步（多机）
+
+`dot_config/atuin/config.toml` 已开启 sync（`auto_sync = true`，官方服务器 `api.atuin.sh`）。
+这些是**非敏感**参数，进仓库；账号登录和加密密钥**每台机器单独设置，绝不提交**。
+
+每台机器执行一次：
+
+```sh
+atuin login -u <用户名>        # 首次用 atuin register -u <用户名> -e <邮箱>
+atuin sync                     # 首次全量同步
+atuin key                      # 显示加密密钥——存好，是唯一能解密历史的凭证
+```
+
+> 历史是**端到端加密**的，服务器看不到明文。新机器登录时要用上面 `atuin key` 的密钥；
+> 丢了它别的机器就解不开历史。`dotfiles-doctor` 会显示当前机器是否已登录。
+> 想自建服务器就把 `config.toml` 里的 `sync_address` 换成你的地址。
+
 ### CI（GitHub Actions）
 
 `.github/workflows/ci.yml` 在每次 push 自动：渲染安装脚本并 `bash -n`、`shellcheck`、

@@ -1,0 +1,23 @@
+# ~/.config/atuin/config.toml — managed by chezmoi.
+# Only the settings we actually care about are set here; everything else uses
+# Atuin's defaults. Full reference: https://docs.atuin.sh/configuration/config/
+#
+# SYNC: this file enables sync, but holds NO secrets. Your account login and
+# the end-to-end encryption key are per-machine and never committed. On each
+# machine run once:
+#     atuin login -u <user>      # or: atuin register -u <user> -e <email>
+#     atuin sync                 # first full sync
+# and copy your key across machines with `atuin key` (store it safely — it's
+# the only thing that can decrypt your history). See the README secrets note.
+
+# --- sync -------------------------------------------------------------------
+## Automatically sync history in the background.
+auto_sync = true
+## Official Atuin sync server (swap for your self-hosted URL if you run one).
+sync_address = "https://api.atuin.sh"
+## How often to sync. Only triggered when a command runs; "0" = every command.
+sync_frequency = "5m"
+
+# --- behavior ---------------------------------------------------------------
+## Enter runs the selected command immediately; Tab puts it on the line to edit.
+enter_accept = true

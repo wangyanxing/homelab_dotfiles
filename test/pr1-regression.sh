@@ -109,6 +109,11 @@ assert_present "installer installs yazi"    'sxyazi/yazi'          "$installer"
 assert_present "y() wrapper cd's on exit"   'cwd-file'             "$zdir/tools.zsh"
 # atuin stays out of the antidote plugin list (avoids Up-arrow clash)
 assert_absent  "atuin not an antidote plugin" '^atuinsh/atuin'     "$root/dot_zsh_plugins.txt"
+# atuin sync: config managed, enables sync, holds no credentials
+assert_present "atuin config enables sync"    'auto_sync = true'   "$root/dot_config/atuin/config.toml"
+assert_present "atuin config sets sync server" 'sync_address'      "$root/dot_config/atuin/config.toml"
+assert_absent  "atuin config has no session token" 'session'       "$root/dot_config/atuin/config.toml"
+assert_present "doctor checks atuin sync"     'atuin sync'         "$doctor"
 
 # --- zsh syntax parse for every module + entrypoint -------------------------
 if command -v zsh >/dev/null 2>&1; then

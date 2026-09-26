@@ -140,5 +140,18 @@ else
   printf "  ${dim}--   age not configured (secrets optional; see README)${rst}\n"
 fi
 
+section "atuin sync"
+# Sync is opt-in per machine (login + key). Report whether this machine is
+# logged in; a fresh machine just needs `atuin login` + `atuin sync`.
+if command -v atuin >/dev/null 2>&1; then
+  if atuin status >/dev/null 2>&1 && atuin status 2>/dev/null | grep -qiE "username|last sync"; then
+    printf "  ${green}ok${rst}   logged in ${dim}(%s)${rst}\n" "$(atuin status 2>/dev/null | grep -iE 'last sync' | head -1 | tr -s ' ')"; ok=$((ok+1))
+  else
+    printf "  ${yellow}warn${rst} not logged in ${dim}(atuin login -u <user> && atuin sync)${rst}\n"; warn=$((warn+1))
+  fi
+else
+  printf "  ${dim}--   atuin not installed${rst}\n"
+fi
+
 printf "\n${green}%d ok${rst}, ${yellow}%d warn${rst}, ${red}%d missing${rst}\n" "$ok" "$warn" "$miss"
 [[ "$miss" -eq 0 ]] || echo "Tip: fill in missing tools with -> dotfiles-install"
