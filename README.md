@@ -476,6 +476,8 @@ zellij attach     # 接回上一个会话（detach 后恢复）
   `zq`（四宫格 `zellij --layout quad`）、`zd`（左右双栏 `zellij --layout dual`）。
 - **tmux** — 保留作为兜底，键位与 zellij 对齐（`Ctrl-b` 前缀，`hjkl` 切面板、`HJKL` 调大小、`z` 全屏、
   `n`/`p` 切窗口），状态栏与 nvim/zellij/ghostty 统一 tokyonight 配色，macOS 上 `y` 复制走 `pbcopy`。
+- **yazi** — 终端文件管理器（可选）。用 `y` 打开：**退出时会把 shell `cd` 到你最后浏览的目录**
+  （官方 cwd-on-exit 包装，在 `tools.zsh`）；直接用 `yazi` 则不改变当前目录。
 - **终端配色** — ghostty / zellij / nvim / tmux 全部统一到 **tokyonight**，观感一致。
 - **macos-defaults** — 可选的 macOS 系统调优脚本（`~/.local/bin/macos-defaults`，**不自动运行**）。
   新 Mac 手动跑一次：加快键盘重复、Finder 显示隐藏文件/扩展名/路径栏、Dock 自动隐藏、截图存

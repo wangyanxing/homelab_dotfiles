@@ -125,6 +125,7 @@ if ! command -v brew >/dev/null 2>&1; then
   gh_install lazydocker jesseduffield/lazydocker "Darwin_${arch}.tar.gz$"
   gh_install glow       charmbracelet/glow       "Darwin_${arch}.tar.gz$"
   gh_install duf        muesli/duf               "darwin_${arch}.tar.gz$"
+  gh_install yazi       sxyazi/yazi              "${rust_arch}-apple-darwin.zip$"
 
   # neovim (official macOS tarball)
   if ! command -v nvim >/dev/null 2>&1; then
@@ -228,6 +229,7 @@ gh_install dust       bootandy/dust            "dust-.*${arch}-unknown-linux-gnu
 gh_install duf        muesli/duf               "linux_${arch}.tar.gz$"
 gh_install procs      dalance/procs            "${arch}-linux.zip$"
 gh_install glow       charmbracelet/glow       "Linux_${arch}.tar.gz$"
+gh_install yazi       sxyazi/yazi              "${arch}-unknown-linux-gnu.zip$"
 
 # age + age-keygen (secrets encryption for chezmoi) -- optional. One tarball
 # ships both binaries, so extract once instead of two gh_install downloads.
@@ -307,7 +309,7 @@ fi
 set -e
 
 req_tools=(starship zoxide eza delta zellij atuin mise nvim)
-opt_tools=(lazygit lazydocker dust duf procs glow yq gh tldr age-keygen)
+opt_tools=(lazygit lazydocker dust duf procs glow yq gh tldr age-keygen yazi)
 
 echo ">>> [dotfiles] install summary"
 echo "    required:"

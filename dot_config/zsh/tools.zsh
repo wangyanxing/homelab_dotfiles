@@ -34,6 +34,22 @@ if command -v mise >/dev/null 2>&1; then
   eval "$(mise activate zsh)"
 fi
 
+# --- yazi : terminal file manager -------------------------------------------
+# `y` opens yazi and, on quit, cd's your shell to the last directory you were
+# browsing (yazi's official cwd-on-exit wrapper). Plain `yazi` still works and
+# leaves your $PWD untouched.
+if command -v yazi >/dev/null 2>&1; then
+  y() {
+    local tmp cwd
+    tmp="$(mktemp -t yazi-cwd.XXXXXX)"
+    yazi "$@" --cwd-file="$tmp"
+    if cwd="$(command cat -- "$tmp" 2>/dev/null)" && [[ -n "$cwd" && "$cwd" != "$PWD" ]]; then
+      builtin cd -- "$cwd" || return
+    fi
+    rm -f -- "$tmp"
+  }
+fi
+
 # --- bat : theme for `cat` / man pages --------------------------------------
 if command -v bat >/dev/null 2>&1; then
   export BAT_THEME="ansi"

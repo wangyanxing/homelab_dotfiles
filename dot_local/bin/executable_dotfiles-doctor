@@ -63,7 +63,7 @@ for t in bat fd rg delta atuin mise zellij tmux; do check_cmd "$t"; done
 check_opt eza "optional on macOS (ll falls back to ls)"
 
 section "extras"
-for t in lazygit lazydocker jq yq dust duf procs btop gh tldr glow http; do check_opt "$t"; done
+for t in lazygit lazydocker jq yq dust duf procs btop gh tldr glow http yazi; do check_opt "$t"; done
 
 section "config files"
 check_file "~/.zshrc"

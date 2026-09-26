@@ -19,3 +19,9 @@ MichaelAquilina/zsh-you-should-use
 
 # syntax highlighting on the command line (must be loaded near-last)
 zsh-users/zsh-syntax-highlighting
+
+# --- NOT loaded as antidote plugins (initialized in tools.zsh instead) ------
+# atuin: loaded via `atuin init zsh --disable-up-arrow` in tools.zsh so it does
+#   NOT hijack the Up-arrow history-substring-search above. The antidote plugin
+#   (atuinsh/atuin) runs the same init but WITHOUT --disable-up-arrow, which
+#   would clash — so we deliberately keep atuin out of this file.

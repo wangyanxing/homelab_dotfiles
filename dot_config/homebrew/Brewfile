@@ -25,6 +25,7 @@ brew "gh"
 brew "neovim"
 brew "zellij"
 brew "tmux"
+brew "yazi"        # blazing-fast terminal file manager (`y` wraps it, cd-on-exit)
 
 # --- runtime version manager ---
 brew "mise"

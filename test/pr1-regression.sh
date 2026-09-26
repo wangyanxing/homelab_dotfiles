@@ -19,6 +19,7 @@
 #    10. dotfiles-update: pull --rebase -> diff preview -> apply.
 #    11. doctor: config-drift + secrets/age status sections.
 #    12. age is a declared dependency (Brewfile + Linux installer).
+#    13. yazi optional install + cwd-on-exit `y`; atuin stays out of plugins.txt.
 #
 #  Static checks only. Does NOT run the installer or touch the network.
 #  Run from the repo root:  ./test/pr1-regression.sh
@@ -101,6 +102,13 @@ assert_present "doctor reports secrets/age" 'secrets \(age\)'      "$doctor"
 # age is a declared dependency (macOS Brewfile + Linux installer)
 assert_present "Brewfile declares age"      'brew "age"'           "$root/dot_config/homebrew/Brewfile"
 assert_present "installer installs age"     'FiloSottile/age'      "$installer"
+
+# yazi: optional file manager with a cwd-on-exit `y` wrapper
+assert_present "Brewfile declares yazi"     'brew "yazi"'          "$root/dot_config/homebrew/Brewfile"
+assert_present "installer installs yazi"    'sxyazi/yazi'          "$installer"
+assert_present "y() wrapper cd's on exit"   'cwd-file'             "$zdir/tools.zsh"
+# atuin stays out of the antidote plugin list (avoids Up-arrow clash)
+assert_absent  "atuin not an antidote plugin" '^atuinsh/atuin'     "$root/dot_zsh_plugins.txt"
 
 # --- zsh syntax parse for every module + entrypoint -------------------------
 if command -v zsh >/dev/null 2>&1; then
